@@ -1,0 +1,35 @@
+{% comment %}
+  404 Redirect Handler
+  Checks for custom redirects before falling back to default
+{% endcomment %}
+
+<script>
+  async function handleRedirect() {
+    const currentPath = window.location.pathname;
+    
+    try {
+      // First check for custom redirect
+      const response = await fetch(`/api/check-redirect?path=${encodeURIComponent(currentPath)}`);
+      const data = await response.json();
+      
+      if (data.redirect_to) {
+        window.location.href = data.redirect_to;
+        return;
+      }
+      
+      // Fall back to default redirect if no custom redirect found
+      const defaultRedirect = {{ shop.metafields.redirect_settings.default_redirect | json }} || '/';
+      window.location.href = defaultRedirect;
+      
+    } catch (error) {
+      console.error('Redirect error:', error);
+      // Fall back to homepage on error
+      window.location.href = '/';
+    }
+  }
+
+  // Check if we're on a 404 page
+  if (document.location.pathname.includes('404')) {
+    handleRedirect();
+  }
+</script> 
