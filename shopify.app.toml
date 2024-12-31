@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "8d735ce17d5961291e4e000dd6ad3ff7"
-application_url = "https://cute-gadgets-ceiling-coated.trycloudflare.com"
+application_url = "https://arms-classified-pools-ghost.trycloudflare.com"
 embedded = true
 name = "seo-wizzard"
 handle = "seo-wizzard-7"
@@ -23,9 +23,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://cute-gadgets-ceiling-coated.trycloudflare.com/auth/callback",
-  "https://cute-gadgets-ceiling-coated.trycloudflare.com/auth/shopify/callback",
-  "https://cute-gadgets-ceiling-coated.trycloudflare.com/api/auth/callback"
+  "https://arms-classified-pools-ghost.trycloudflare.com/auth/callback",
+  "https://arms-classified-pools-ghost.trycloudflare.com/auth/shopify/callback",
+  "https://arms-classified-pools-ghost.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
@@ -34,3 +34,4 @@ embedded = false
 [build]
 dev_store_url = "baltisilacuri.myshopify.com"
 automatically_update_urls_on_dev = true
+include_config_on_deploy = true

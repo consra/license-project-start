@@ -3,30 +3,71 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 // Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
 // enough when changing adapters.
 // See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
-  provider = "sqlite"
-  url      = "file:dev.sqlite"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions = []
 }
 
-model Session {
-  id            String    @id
-  shop          String
-  state         String
-  isOnline      Boolean   @default(false)
-  scope         String?
-  expires       DateTime?
-  accessToken   String
-  userId        BigInt?
-  firstName     String?
-  lastName      String?
-  email         String?
-  accountOwner  Boolean   @default(false)
-  locale        String?
-  collaborator  Boolean?  @default(false)
-  emailVerified Boolean?  @default(false)
+model Redirect {
+  id          Int       @id @default(autoincrement())
+  shopDomain  String    @db.VarChar @map("shop_domain")
+  fromPath    String    @db.VarChar @map("from_path")
+  toPath      String    @db.VarChar @map("to_path")
+  isActive    Boolean   @default(true) @map("is_active")
+  isWildcard  Boolean   @default(false) @map("is_wildcard")
+  pattern     String?   @db.VarChar @map("pattern")
+  createdAt   DateTime  @default(now()) @db.Timestamp @map("created_at")
+  updatedAt   DateTime  @updatedAt @db.Timestamp @map("updated_at")
+
+  @@index([shopDomain, fromPath])
+  @@map("redirects")
+}
+
+model NotFoundError {
+  id          Int       @id @default(autoincrement())
+  shopDomain  String    @db.VarChar @map("shop_domain")
+  path        String    @db.VarChar
+  userAgent   String?   @db.VarChar @map("user_agent")
+  referer     String?   @db.VarChar
+  timestamp   DateTime  @default(now()) @db.Timestamp
+  redirected  Boolean   @default(false)
+  redirectTo  String?   @db.VarChar @map("redirect_to")
+
+  @@index([shopDomain, timestamp])
+  @@map("not_found_errors")
+}
+
+model NotificationSettings {
+  id          Int       @id @default(autoincrement())
+  shopDomain  String    @db.VarChar @map("shop_domain")
+  email       String    @db.VarChar
+  frequency   String    @db.VarChar  // daily, weekly, monthly
+  enabled     Boolean   @default(true)
+  lastSentAt  DateTime? @db.Timestamp @map("last_sent_at")
+  createdAt   DateTime  @default(now()) @db.Timestamp @map("created_at")
+  updatedAt   DateTime  @updatedAt @db.Timestamp @map("updated_at")
+
+  @@unique([shopDomain, email])
+  @@map("notification_settings")
+}
+
+model SupportTicket {
+  id          Int       @id @default(autoincrement())
+  shopDomain  String    @db.VarChar @map("shop_domain")
+  name        String    @db.VarChar
+  email       String    @db.VarChar
+  question    String    @db.Text
+  status      String    @db.VarChar @default("open")  // open, answered, closed
+  createdAt   DateTime  @default(now()) @db.Timestamp @map("created_at")
+  updatedAt   DateTime  @updatedAt @db.Timestamp @map("updated_at")
+
+  @@index([shopDomain, status])
+  @@map("support_tickets")
 }

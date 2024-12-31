@@ -1,9 +1,11 @@
+import React from "react";
 import { Card, Page, Layout, TextField, Button, DataTable } from "@shopify/polaris";
 import { useState, useCallback } from "react";
-import { useAuthenticatedFetch } from "../hooks";
+import { useNavigate } from "@remix-run/react";
 
-export function RedirectManager() {
-  const fetch = useAuthenticatedFetch();
+
+export default function Redirects() {
+    const navigate = useNavigate();
   const [fromPath, setFromPath] = useState("");
   const [toPath, setToPath] = useState("");
   const [redirects, setRedirects] = useState([]);
@@ -63,4 +65,4 @@ export function RedirectManager() {
       </Layout>
     </Page>
   );
-} 
+}
