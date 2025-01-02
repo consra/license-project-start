@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "8d735ce17d5961291e4e000dd6ad3ff7"
-application_url = "https://houston-rca-incentives-mom.trycloudflare.com"
+application_url = "https://place-hh-sleeping-advertiser.trycloudflare.com"
 embedded = true
 name = "seo-wizzard"
 handle = "seo-wizzard-7"
@@ -23,9 +23,9 @@ scopes = "read_themes"
 
 [auth]
 redirect_urls = [
-  "https://houston-rca-incentives-mom.trycloudflare.com/auth/callback",
-  "https://houston-rca-incentives-mom.trycloudflare.com/auth/shopify/callback",
-  "https://houston-rca-incentives-mom.trycloudflare.com/api/auth/callback"
+  "https://place-hh-sleeping-advertiser.trycloudflare.com/auth/callback",
+  "https://place-hh-sleeping-advertiser.trycloudflare.com/auth/shopify/callback",
+  "https://place-hh-sleeping-advertiser.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

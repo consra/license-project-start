@@ -73,29 +73,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   if (selectedPlan.toLowerCase() === "premium") {
-    try {
-      const response = await billing.require({
+    const response = await billing.require({
         plans: [PREMIUM_PLAN.name],
         isTest,
-        onFailure: async () => billing.request({
-          plan: PREMIUM_PLAN.name,
-          isTest
-        }),
-      });
+            onFailure: async () => billing.request({
+                plan: PREMIUM_PLAN.name,
+                isTest,
+            }),
+    });
 
-      console.log('Subscription response:', JSON.stringify(response));
+    console.log('Subscription response:', JSON.stringify(response));
 
-      if (response?.hasActivePayment) {
-        return json({ success: true });
-      }
+    if (response?.hasActivePayment) {
+       return json({ success: true });
+    }
 
-      // Redirect to Shopify's confirmation URL if available
-      if (response.confirmationUrl) {
-        return redirect(response.confirmationUrl);
-      }
-    } catch (error) {
-      console.error('Subscription error:', error);
-      return json({ error: "Failed to process subscription" }, { status: 500 });
+    // Redirect to Shopify's confirmation URL if available
+    if (response.confirmationUrl) {
+       return redirect(response.confirmationUrl);
     }
   }
 
@@ -104,11 +99,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export default function Billing() {
   const { currentPlan, hasActivePayment } = useLoaderData<typeof loader>();
-  const [selectedPlan] = useState(currentPlan);
+  const [selectedPlan, setSelectedPlan] = useState(currentPlan);
   const fetcher = useFetcher();
   console.log("currentPlan", currentPlan);
 
   const handlePlanChange = (planType: string) => {
+    setSelectedPlan(planType);
     const formData = new FormData();
     formData.append("planType", planType.toLowerCase());
     fetcher.submit(formData, { method: "post" });
