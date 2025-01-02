@@ -50,6 +50,27 @@
   document.addEventListener('DOMContentLoaded', handle404);
 </script>
 
+{% schema %}
+{
+  "name": "404 Page",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "404 Title",
+      "default": "Page not found"
+    },
+    {
+      "type": "richtext",
+      "id": "message",
+      "label": "404 Message",
+      "default": "<p>The page you were looking for does not exist.</p>"
+    }
+  ]
+}
+{% endschema %}
+
 {% if template == '404' %}
   <div class="page-width">
     <div class="empty-page-content text-center">

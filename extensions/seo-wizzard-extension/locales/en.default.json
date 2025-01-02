@@ -6,5 +6,11 @@
     "home": {
       "recommendationText": "Recommended Product!"
     }
+  },
+  "general": {
+    "404": {
+      "title": "Page not found",
+      "subtext_html": "The page you were looking for does not exist. <br>Please check the URL or go back to the homepage."
+    }
   }
 }

@@ -2,9 +2,9 @@ import { Link, useLoaderData } from "@remix-run/react";
 import { Card, Layout, Page, Button, Text, Banner, Modal, List, Icon } from "@shopify/polaris";
 import { CheckIcon, XIcon } from '@shopify/polaris-icons';
 import { authenticate } from "../shopify.server";
+import { prisma } from "../db.server";
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import React, { useState, useCallback } from "react";
-import { PrismaClient } from '@prisma/client';
 
 type Theme = {
   id: string;
@@ -13,8 +13,6 @@ type Theme = {
   isActive: boolean;
 };
 
-const prisma = new PrismaClient();
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
 
@@ -22,7 +20,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const response = await admin.graphql(
     `#graphql
       query getThemes {
-        themes(first: 50) {
+        themes(first: 10) {
           nodes {
             id
             name
