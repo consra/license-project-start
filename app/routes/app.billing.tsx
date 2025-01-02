@@ -1,5 +1,5 @@
 import { json, type LoaderFunctionArgs, redirect, type ActionFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useSubmit } from "@remix-run/react";
+import { useFetcher, useLoaderData, useSubmit } from "@remix-run/react";
 import { 
   Page, 
   Layout, 
@@ -15,116 +15,104 @@ import { authenticate } from "../shopify.server";
 import { useState } from "react";
 import { Check, X, Zap } from "lucide-react";
 
+const FREE_PLAN = "Free";
 const PREMIUM_PLAN = {
+  name: "Premium",
   amount: 3.99,
   currencyCode: "USD",
   interval: "EVERY_30_DAYS" as const,
-  trialDays: 7,
+  trialDays: 7
 };
 
+const isTest = process.env.NODE_ENV !== 'production';
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session, admin } = await authenticate.admin(request);
-  
-  // Check if shop has active subscription through Shopify API
-  const subscriptionData = await admin.graphql(`
-    query getSubscription {
-      appInstallation {
-        activeSubscriptions {
-          id
-          name
-          status
-          currentPeriodEnd
-          lineItems {
-            plan {
-              pricingDetails {
-                ... on AppRecurringPricing {
-                  price {
-                    amount
-                    currencyCode
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  `);
+  const { billing } = await authenticate.admin(request);
 
-  const data = await subscriptionData.json();
-  const activeSubscription = data.appInstallation?.activeSubscriptions[0];
-  const isPremium = activeSubscription?.lineItems[0]?.plan?.pricingDetails?.price?.amount === PREMIUM_PLAN.amount;
+  // Check current subscription status
+  const response = await billing.check({
+    plans: [PREMIUM_PLAN.name],
+    isTest,
+  });
 
-  return json({
-    isPremium,
-    activeSubscription,
-    shop: session.shop 
+  const { appSubscriptions, hasActivePayment } = response;
+  const currentPlan = hasActivePayment ? appSubscriptions[0]?.name : FREE_PLAN;
+
+  return json({ 
+    currentPlan,
+    appSubscriptions,
+    hasActivePayment
   });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session, admin } = await authenticate.admin(request);
+  const { billing } = await authenticate.admin(request);
   const formData = await request.formData();
-  const planType = formData.get("planType") as string;
+  const selectedPlan = formData.get("planType") as string;
 
-  if (planType === "premium") {
-    const response = await admin.graphql(`
-      mutation createSubscription($name: String!, $lineItems: [AppSubscriptionLineItemInput!]!, $returnUrl: URL!, $trialDays: Int!) {
-        appSubscriptionCreate(
-          name: $name,
-          lineItems: $lineItems,
-          returnUrl: $returnUrl,
-          trialDays: $trialDays,
-          test: true
-        ) {
-          appSubscription {
-            id
-          }
-          confirmationUrl
-          userErrors {
-            field
-            message
-          }
-        }
-      }
-    `, {
-      variables: {
-        name: "Premium Plan",
-        lineItems: [{
-          plan: {
-            appRecurringPricingDetails: {
-              price: { amount: PREMIUM_PLAN.amount, currencyCode: PREMIUM_PLAN.currencyCode },
-              interval: PREMIUM_PLAN.interval,
-            },
-          },
-        }],
-        returnUrl: `https://${session.shop}/admin/apps/seo-wizard`,
-        trialDays: PREMIUM_PLAN.trialDays
-      },
+  // Check current subscription status
+  const checkResponse = await billing.check({
+    plans: [PREMIUM_PLAN.name],
+    isTest,
+  });
+  console.log("checkResponse", JSON.stringify(checkResponse));
+
+  // Cancel existing subscription if any
+  if (checkResponse.hasActivePayment) {
+    console.log('Canceling plan:', checkResponse.appSubscriptions[0].name);
+    await billing.cancel({
+      subscriptionId: checkResponse.appSubscriptions[0].id,
+      isTest,
+      prorate: false,
     });
-
-    const { appSubscriptionCreate } = await response.json();
-
-    if (appSubscriptionCreate.userErrors.length > 0) {
-      return json({ errors: appSubscriptionCreate.userErrors });
-    }
-
-    return redirect(appSubscriptionCreate.confirmationUrl);
   }
 
-  // For downgrading to free plan, we'll let Shopify handle it through their billing UI
-  return json({ error: "Please manage your subscription through Shopify admin" }, { status: 400 });
+  // Handle plan selection
+  if (selectedPlan.toLowerCase() === "free") {
+    return json({ success: true });
+  }
+
+  if (selectedPlan.toLowerCase() === "premium") {
+    try {
+      const response = await billing.require({
+        plan: PREMIUM_PLAN.name,
+        isTest,
+        onFailure: async () => billing.request({
+          plan: PREMIUM_PLAN.name,
+          isTest,
+          returnUrl: new URL('/app/billing', request.url).toString(),
+        }),
+      });
+
+      console.log('Subscription response:', JSON.stringify(response));
+
+      if (response?.hasActivePayment) {
+        return json({ success: true });
+      }
+
+      // Redirect to Shopify's confirmation URL if available
+      if (response.confirmationUrl) {
+        return redirect(response.confirmationUrl);
+      }
+    } catch (error) {
+      console.error('Subscription error:', error);
+      return json({ error: "Failed to process subscription" }, { status: 500 });
+    }
+  }
+
+  return json({ error: "Invalid plan selected" }, { status: 400 });
 };
 
 export default function Billing() {
-  const { isPremium, activeSubscription } = useLoaderData<typeof loader>();
-  const submit = useSubmit();
-  const [selectedPlan] = useState(isPremium ? 'premium' : 'free');
+  const { currentPlan, hasActivePayment } = useLoaderData<typeof loader>();
+  const [selectedPlan] = useState(currentPlan);
+  const fetcher = useFetcher();
+  console.log("currentPlan", currentPlan);
 
   const handlePlanChange = (planType: string) => {
     const formData = new FormData();
-    formData.append("planType", planType);
-    submit(formData, { method: "post" });
+    formData.append("planType", planType.toLowerCase());
+    fetcher.submit(formData, { method: "post" });
   };
 
   const plans = [
@@ -195,7 +183,7 @@ export default function Billing() {
                 shadow="200"
                 width="100%"
                 borderWidth="025"
-                borderColor={selectedPlan === plan.name.toLowerCase() ? "border-info" : "border-subdued"}
+                borderColor={selectedPlan.toLowerCase() === plan.name.toLowerCase() ? "border-info" : "border-subdued"}
               >
                 <BlockStack gap="600">
                   <BlockStack gap="200">
@@ -274,11 +262,11 @@ export default function Billing() {
                     <Button
                       variant={plan.name === "Premium" ? "primary" : "secondary"}
                       onClick={() => handlePlanChange(plan.name.toLowerCase())}
-                      disabled={selectedPlan === plan.name.toLowerCase()}
+                      disabled={selectedPlan.toLowerCase() === plan.name.toLowerCase()}
                       size="large"
                       fullWidth
                     >
-                      {selectedPlan === plan.name.toLowerCase() 
+                      {selectedPlan.toLowerCase() === plan.name.toLowerCase() 
                         ? "Current Plan" 
                         : plan.name === "Premium" 
                           ? `Upgrade to ${plan.name}` 
@@ -296,17 +284,6 @@ export default function Billing() {
               </Box>
             ))}
           </InlineStack>
-        </Layout.Section>
-
-        <Layout.Section>
-          <Box padding="400">
-            <BlockStack gap="200" align="center">
-              <Text variant="headingSm" as="h3">Questions about billing?</Text>
-              <Text variant="bodySm" as="p" tone="subdued">
-                Contact us at support@seowizard.com
-              </Text>
-            </BlockStack>
-          </Box>
         </Layout.Section>
       </Layout>
     </Page>
