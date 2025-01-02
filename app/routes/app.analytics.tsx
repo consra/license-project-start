@@ -87,8 +87,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     _count: true,
     orderBy: {
       _count: {
-        path: 'desc',
-      },
+        path: 'desc'
+      }
     },
     take: 5,
   });
@@ -174,7 +174,8 @@ export default function Analytics() {
         </Layout.Section>
 
         <Layout.Section>
-          <Card title="Top 404 Paths">
+          <Card>
+            <Text variant="headingMd" as="h2">Top 404 Paths</Text>
             <div style={{ height: '300px' }}>
               <Bar 
                 data={barChartData}

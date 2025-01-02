@@ -10,13 +10,13 @@ import {
   BlockStack,
   Text,
   Box,
-  TextArea
+  TextContainer
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
 import { useState, useCallback } from "react";
 import React from "react";
-import { sendNotificationEmail } from "~/services/email.server";
+import { sendNotificationEmail } from "../services/email.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -128,10 +128,11 @@ export default function Help() {
                 required
               />
 
-              <TextArea
+              <TextField
                 label="Your Question"
                 value={question}
                 onChange={setQuestion}
+                multiline
                 minHeight="200px"
                 required
               />
@@ -154,11 +155,24 @@ export default function Help() {
           <Card>
             <BlockStack gap="400">
               <Text as="h2" variant="headingMd">Common Questions</Text>
+              
               <Text as="h3" variant="headingSm">How do wildcard redirects work?</Text>
-              <Text>Wildcard redirects allow you to create flexible rules using * to match multiple URLs.</Text>
+              <Text as="p">Wildcard redirects allow you to create flexible rules using * to match multiple URLs.</Text>
               
               <Text as="h3" variant="headingSm">How often are notification emails sent?</Text>
-              <Text>You can choose to receive notifications daily, weekly, or monthly.</Text>
+              <Text as="p">You can choose to receive notifications daily, weekly, or monthly.</Text>
+              
+              <Text as="h3" variant="headingSm">What does the 404 analytics show?</Text>
+              <Text as="p">The analytics dashboard shows your most common broken links and trends over time, helping you identify and fix critical issues.</Text>
+              
+              <Text as="h3" variant="headingSm">Can I export the broken links data?</Text>
+              <Text as="p">Yes, you can export your 404 error data as CSV files for further analysis or record keeping.</Text>
+              
+              <Text as="h3" variant="headingSm">How do I set up automatic redirects?</Text>
+              <Text as="p">Navigate to the Settings page to enable automatic redirects for common misspellings and old URLs.</Text>
+              
+              <Text as="h3" variant="headingSm">What's the difference between exact and wildcard matches?</Text>
+              <Text as="p">Exact matches redirect specific URLs, while wildcards (*) can match multiple similar URLs following a pattern.</Text>
             </BlockStack>
           </Card>
         </Layout.Section>

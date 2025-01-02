@@ -71,3 +71,17 @@ model SupportTicket {
   @@index([shopDomain, status])
   @@map("support_tickets")
 }
+
+model ShopifySession {
+  id              String    @id @db.VarChar(255)
+  shop            String    @db.VarChar(255)
+  state           String    @db.VarChar(255)
+  isOnline        Boolean
+  scope           String?   @db.VarChar(255)
+  expires         DateTime?
+  accessToken     String?   @db.VarChar(255)
+  onlineAccessInfo Json?
+
+  @@index([shop])
+  @@map("shopify_sessions")
+}
