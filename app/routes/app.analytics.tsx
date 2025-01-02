@@ -5,14 +5,9 @@ import {
   Page, 
   Layout, 
   Select, 
-  DatePicker,
-  Button,
   BlockStack,
   Text,
-  Banner,
-  Grid,
   Box,
-  Icon,
   InlineStack
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
@@ -31,12 +26,6 @@ import {
   BarElement,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
-import { 
-  BarcodeIcon, 
-  ChartLineIcon,
-  AlertDiamondIcon,
-} from "@shopify/polaris-icons";
-import { BarChartIcon } from "lucide-react";
 
 ChartJS.register(
   CategoryScale,
@@ -48,7 +37,7 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-
+ 
 type TimeRange = "day" | "week" | "month";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -70,64 +59,71 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       startDate.setDate(now.getDate() - 7);
   }
 
-  const errors = await prisma.notFoundError.groupBy({
-    by: ['timestamp'],
-    where: {
-      shopDomain: session.shop,
-      timestamp: {
-        gte: startDate,
-        lte: now,
-      },
-    },
-    _count: true,
-    orderBy: {
-      timestamp: 'asc',
-    },
-  });
-
-  const topPaths = await prisma.notFoundError.groupBy({
-    by: ['path'],
-    where: {
-      shopDomain: session.shop,
-      timestamp: {
-        gte: startDate,
-      },
-    },
-    _count: true,
-    orderBy: {
-      _count: {
-        path: 'desc'
-      }
-    },
-    take: 5,
-  });
-
-  const [
-    totalRedirects,
-    recentErrors,
-    handledErrors,
-    topReferrers
-  ] = await Promise.all([
-    prisma.redirect.count({
-      where: { shopDomain: session.shop }
-    }),
-    prisma.notFoundError.count({
+  const [errors, topPaths, totalRedirects, unfixedErrors, topReferrers] = await Promise.all([
+    // 404 Errors over time
+    prisma.notFoundError.groupBy({
+      by: ['timestamp'],
       where: {
         shopDomain: session.shop,
         timestamp: {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // last 24h
+          gte: startDate,
+          lte: now,
+        },
+      },
+      _count: true,
+      orderBy: {
+        timestamp: 'asc',
+      },
+    }),
+
+    // Top Paths
+    prisma.notFoundError.groupBy({
+      by: ['path'],
+      where: {
+        shopDomain: session.shop,
+        timestamp: {
+          gte: startDate,
+        },
+      },
+      _count: true,
+      orderBy: [
+        {
+          path: 'desc'
+        }
+      ],
+      take: 5,
+    }),
+
+    // Total Redirects in period
+    prisma.redirect.count({
+      where: { 
+        shopDomain: session.shop,
+        createdAt: {
+          gte: startDate
         }
       }
     }),
+
+    // Unfixed Errors in period
     prisma.notFoundError.count({
       where: {
         shopDomain: session.shop,
-        redirected: true
+        redirected: false,
+        timestamp: {
+          gte: startDate
+        }
       }
     }),
+
+    // Top Referrers in period
     prisma.notFoundError.groupBy({
       by: ['referer'],
-      where: { shopDomain: session.shop },
+      where: { 
+        shopDomain: session.shop,
+        timestamp: {
+          gte: startDate
+        }
+      },
       _count: true,
       orderBy: [
         {
@@ -138,15 +134,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     })
   ]);
 
+  const totalErrors = errors.reduce((sum, error) => sum + error._count, 0);
+  const avgDaily = Math.round(totalErrors / (range === 'day' ? 1 : range === 'week' ? 7 : 30));
+
   return json({
     errors,
     topPaths,
     range,
     additionalMetrics: {
       totalRedirects,
-      recentErrors,
-      handledErrors,
-      handledPercentage: Math.round((handledErrors / errors.length) * 100),
+      totalErrors,
+      avgDaily,
+      unfixedErrors,
       topReferrers
     }
   });
@@ -161,12 +160,6 @@ export default function Analytics() {
     setSelectedRange(value as TimeRange);
     navigate(`/app/analytics?range=${value}`);
   }, [navigate]);
-
-  const options = [
-    { label: 'Last 24 Hours', value: 'day' },
-    { label: 'Last Week', value: 'week' },
-    { label: 'Last Month', value: 'month' },
-  ];
 
   const lineChartData = {
     labels: errors.map(error => 
@@ -198,78 +191,29 @@ export default function Analytics() {
       title="404 Analytics Dashboard" 
       subtitle="Monitor and analyze your store's broken links and redirects performance"
       divider
+      primaryAction={
+        <Box minWidth="200px">
+          <Select
+            label="Time Range"
+            labelInline
+            options={[
+              { label: 'Last 24 Hours', value: 'day' },
+              { label: 'Last 7 Days', value: 'week' },
+              { label: 'Last 30 Days', value: 'month' },
+            ]}
+            onChange={handleRangeChange}
+            value={selectedRange}
+          />
+        </Box>
+      }
     >
       <Layout>
-        {/* Metrics Overview */}
         <Layout.Section>
-          <BlockStack gap="400">
-            <InlineStack gap="400" wrap={false}>
-              <Card background="bg-surface-secondary">
-                <Box padding="400">
-                  <BlockStack gap="200" align="center">
-                    <div style={{ 
-                      backgroundColor: 'var(--p-color-bg-success-subdued)',
-                      padding: '12px',
-                      borderRadius: '8px'
-                    }}>
-                      <Icon source={BarChartIcon} tone="success" />
-                    </div>
-                    <Text variant="headingMd" as="h3">Total 404s</Text>
-                    <Text variant="headingXl" as="p" fontWeight="bold">
-                      {errors.reduce((sum, error) => sum + error._count, 0)}
-                    </Text>
-                  </BlockStack>
-                </Box>
-              </Card>
-              <Card background="bg-surface-secondary">
-                <Box padding="400">
-                  <BlockStack gap="200" align="center">
-                    <div style={{ 
-                      backgroundColor: 'var(--p-color-bg-info-subdued)',
-                      padding: '12px',
-                      borderRadius: '8px'
-                    }}>
-                      <Icon source={ChartLineIcon} tone="info" />
-                    </div>
-                    <Text variant="headingMd" as="h3">Average Daily</Text>
-                    <Text variant="headingXl" as="p" fontWeight="bold">
-                      {Math.round(errors.reduce((sum, error) => sum + error._count, 0) / errors.length)}
-                    </Text>
-                  </BlockStack>
-                </Box>
-              </Card>
-              <Card background="bg-surface-secondary">
-                <Box padding="400">
-                  <BlockStack gap="200" align="center">
-                    <div style={{ 
-                      backgroundColor: 'var(--p-color-bg-warning-subdued)',
-                      padding: '12px',
-                      borderRadius: '8px'
-                    }}>
-                      <Icon source={AlertDiamondIcon} tone="warning" />
-                    </div>
-                    <Text variant="headingMd" as="h3">Peak Errors</Text>
-                    <Text variant="headingXl" as="p" fontWeight="bold">
-                      {Math.max(...errors.map(error => error._count))}
-                    </Text>
-                  </BlockStack>
-                </Box>
-              </Card>
-            </InlineStack>
-          </BlockStack>
-        </Layout.Section>
 
-        <Layout.Section>
-          <Card>
             <Box padding="500">
               <BlockStack gap="500">
-                <InlineStack gap="200" align="center">
-                  <Icon source={ChartLineIcon} tone="info" />
-                  <Text variant="headingMd" as="h2">Additional Insights</Text>
-                </InlineStack>
-
                 <InlineStack gap="500" wrap={false}>
-                  {/* Resolution Rate Card */}
+                  {/* Total 404s Card */}
                   <Box 
                     padding="400" 
                     borderRadius="300"
@@ -277,23 +221,23 @@ export default function Analytics() {
                     width="100%"
                     background="bg-surface-secondary"
                     borderWidth="025"
-                    borderColor="border-success"
+                    borderColor="border-critical"
                   >
                     <BlockStack gap="300" align="center">
-                      <Text variant="headingSm" as="h3">Resolution Rate</Text>
+                      <Text variant="headingSm" as="h3">Total 404s</Text>
                       <div style={{ 
-                        backgroundColor: 'var(--p-color-bg-success-subdued)',
+                        backgroundColor: 'var(--p-color-bg-critical-subdued)',
                         padding: '16px',
                         borderRadius: '12px',
                         width: '100%',
                         textAlign: 'center'
                       }}>
                         <Text variant="heading2xl" as="p" fontWeight="bold">
-                          {additionalMetrics.handledPercentage}%
+                          {additionalMetrics.totalErrors}
                         </Text>
                       </div>
                       <Text variant="bodySm" tone="subdued">
-                        {additionalMetrics.handledErrors} of {errors.length} errors handled
+                        Total broken links in selected period
                       </Text>
                     </BlockStack>
                   </Box>
@@ -309,7 +253,7 @@ export default function Analytics() {
                     borderColor="border-info"
                   >
                     <BlockStack gap="300" align="center">
-                      <Text variant="headingSm" as="h3">Active Redirects</Text>
+                      <Text variant="headingSm" as="h3">Active Simple Redirects</Text>
                       <div style={{ 
                         backgroundColor: 'var(--p-color-bg-info-subdued)',
                         padding: '16px',
@@ -322,7 +266,7 @@ export default function Analytics() {
                         </Text>
                       </div>
                       <Text variant="bodySm" tone="subdued">
-                        Total active redirects
+                        Redirects added in the selected period
                       </Text>
                     </BlockStack>
                   </Box>
@@ -364,7 +308,6 @@ export default function Analytics() {
                 </InlineStack>
               </BlockStack>
             </Box>
-          </Card>
         </Layout.Section>
 
         {/* Time Series Chart */}
@@ -374,23 +317,13 @@ export default function Analytics() {
               <BlockStack gap="500">
                 <InlineStack align="space-between" blockAlign="center">
                   <BlockStack gap="200">
-                    <InlineStack gap="200" align="center">
-                      <Icon source={ChartLineIcon} tone="success" />
+                    <InlineStack gap="200" align="left">
                       <Text variant="headingMd" as="h2">404 Errors Over Time</Text>
                     </InlineStack>
                     <Text variant="bodySm" tone="subdued">
                       Track and analyze error patterns over different time periods
                     </Text>
                   </BlockStack>
-                  <Box minWidth="200px">
-                    <Select
-                      label="Time Range"
-                      labelInline
-                      options={options}
-                      onChange={handleRangeChange}
-                      value={selectedRange}
-                    />
-                  </Box>
                 </InlineStack>
                 
                 <Box 
@@ -452,8 +385,7 @@ export default function Analytics() {
             <Box padding="500">
               <BlockStack gap="500">
                 <BlockStack gap="200">
-                  <InlineStack gap="200" align="center">
-                    <Icon source={BarcodeIcon} tone="info" />
+                  <InlineStack gap="200" align="start">
                     <Text variant="headingMd" as="h2">Most Common 404 Paths</Text>
                   </InlineStack>
                   <Text variant="bodySm" tone="subdued">
