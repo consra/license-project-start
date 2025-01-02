@@ -17,15 +17,14 @@ const shopify = shopifyApp({
   distribution: AppDistribution.AppStore,
   future: {
     unstable_newEmbeddedAuthStrategy: true,
-    removeRest: true,
   },
-  api: {
-    billing: {
-      ["Premium"]: {
+  billing: {
+    ["Premium"]: {
+      lineItems: [{
         amount: 3.99,
         currencyCode: 'USD',
         interval: BillingInterval.Every30Days,
-      },
+      }],
     },
   },
   ...(process.env.SHOP_CUSTOM_DOMAIN

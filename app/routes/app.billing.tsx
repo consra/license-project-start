@@ -1,5 +1,5 @@
 import { json, type LoaderFunctionArgs, redirect, type ActionFunctionArgs } from "@remix-run/node";
-import { useFetcher, useLoaderData, useSubmit } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
 import { 
   Page, 
   Layout, 
@@ -75,12 +75,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (selectedPlan.toLowerCase() === "premium") {
     try {
       const response = await billing.require({
-        plan: PREMIUM_PLAN.name,
+        plans: [PREMIUM_PLAN.name],
         isTest,
         onFailure: async () => billing.request({
           plan: PREMIUM_PLAN.name,
-          isTest,
-          returnUrl: new URL('/app/billing', request.url).toString(),
+          isTest
         }),
       });
 
