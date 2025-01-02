@@ -1,47 +1,81 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import { Page, Layout, LegacyCard, Card, DataTable, Text, Banner } from "@shopify/polaris";
+import { useLoaderData, useNavigate } from "@remix-run/react";
+import { Page, Layout, Card, DataTable, Text, Button, Banner, Modal, TextField } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
-import React from "react";
+import React, { useState, useCallback } from "react";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
 
-  const redirects = await prisma.redirect.findMany({
+  const brokenLinks = await prisma.notFoundError.findMany({
     where: {
       shopDomain: session.shop,
-      isActive: true,
+      redirected: false,
     },
     orderBy: {
-      createdAt: 'desc'
+      timestamp: 'desc'
     },
-    take: 100 // Limit to last 100 entries
+    take: 100
   });
 
   return json({
-    redirects,
+    brokenLinks,
     shop: session.shop
   });
 };
 
 export default function BrokenLinks() {
-  const { redirects, shop } = useLoaderData<typeof loader>();
+  const { brokenLinks, shop } = useLoaderData<typeof loader>();
+  const [modalActive, setModalActive] = useState(false);
+  const [selectedPath, setSelectedPath] = useState("");
+  const [redirectPath, setRedirectPath] = useState("");
 
-  const rows = redirects.map((redirect) => [
-    redirect.fromPath,
-    redirect.toPath,
-    new Date(redirect.createdAt).toLocaleString(),
-    redirect.isActive ? 'Active' : 'Inactive'
+  const handleModalOpen = useCallback((path: string) => {
+    setSelectedPath(path);
+    setRedirectPath("");
+    setModalActive(true);
+  }, []);
+
+  const handleModalClose = useCallback(() => {
+    setModalActive(false);
+    setSelectedPath("");
+    setRedirectPath("");
+  }, []);
+
+  const handleFixRedirect = useCallback(async () => {
+    const response = await fetch("/api/redirects", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fromPath: selectedPath,
+        toPath: redirectPath,
+      }),
+    });
+
+    if (response.ok) {
+      handleModalClose();
+      // Optionally refresh the page or update the list
+      window.location.reload();
+    }
+  }, [selectedPath, redirectPath]);
+
+  const rows = brokenLinks.map((link) => [
+    link.path,
+    new Date(link.timestamp).toLocaleString(),
+    1,
+    <Button onClick={() => handleModalOpen(link.path)}>Fix</Button>
   ]);
 
   return (
-    <Page title="Broken Links Report">
+    <Page title="New Broken Links">
       <Layout>
         <Layout.Section>
           <Card>
-            <Banner title="404 Redirect Report" status="info">
-              <p>Showing the most recent 404 errors and their redirects for {shop}</p>
+            <Banner tone="warning">
+              <p>Showing new 404 errors that need to be fixed for {shop}</p>
             </Banner>
           </Card>
         </Layout.Section>
@@ -50,19 +84,51 @@ export default function BrokenLinks() {
           <Card>
             {rows.length > 0 ? (
               <DataTable
-                columnContentTypes={['text', 'text', 'text', 'text']}
-                headings={['Broken URL', 'Redirects To', 'First Seen', 'Status']}
+                columnContentTypes={['text', 'text', 'numeric', 'text']}
+                headings={['Broken URL', 'First Seen', 'Occurrences', 'Action']}
                 rows={rows}
               />
             ) : (
-              <LegacyCard.Section>
-                <Text as="p" alignment="center" color="subdued">
-                  No broken links have been recorded yet.
-                </Text>
-              </LegacyCard.Section>
+              <Text as="p" alignment="center" tone="subdued">
+                No new broken links have been detected.
+              </Text>
             )}
           </Card>
         </Layout.Section>
+
+        <Modal
+          open={modalActive}
+          onClose={handleModalClose}
+          title="Create Redirect"
+          primaryAction={{
+            content: 'Create Redirect',
+            onAction: handleFixRedirect,
+            disabled: !redirectPath
+          }}
+          secondaryActions={[
+            {
+              content: 'Cancel',
+              onAction: handleModalClose,
+            },
+          ]}
+        >
+          <Modal.Section>
+            <TextField
+              label="From Path"
+              value={selectedPath}
+              disabled
+              autoComplete="off"
+            />
+            <TextField
+              label="Redirect To"
+              value={redirectPath}
+              onChange={setRedirectPath}
+              autoComplete="off"
+              placeholder="/new-path"
+              helpText="Enter the path where this URL should redirect to"
+            />
+          </Modal.Section>
+        </Modal>
       </Layout>
     </Page>
   );

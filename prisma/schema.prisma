@@ -85,3 +85,14 @@ model ShopifySession {
   @@index([shop])
   @@map("shopify_sessions")
 }
+
+model ThemeStatus {
+  id          String   @id @default(cuid())
+  shopDomain  String
+  themeId     String
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([shopDomain, themeId])
+}
