@@ -19,7 +19,7 @@ const PREMIUM_PLAN = {
   amount: 3.99,
   currencyCode: "USD",
   interval: "EVERY_30_DAYS" as const,
-  trialDays: 14,
+  trialDays: 7,
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -170,6 +170,21 @@ export default function Billing() {
     >
       <Layout>
         <Layout.Section>
+          <Box
+            background="bg-surface-info-subdued"
+            borderRadius="300"
+            padding="400"
+            borderWidth="025"
+            borderColor="border-info"
+          >
+            <InlineStack gap="300" align="center">
+              <Zap size={20} style={{ color: 'var(--p-color-text-info)' }} />
+              <Text as="p">Try Premium free for {PREMIUM_PLAN.trialDays} days. Cancel anytime.</Text>
+            </InlineStack>
+          </Box>
+        </Layout.Section>
+
+        <Layout.Section>
           <InlineStack gap="500" wrap={false}>
             {plans.map((plan) => (
               <Box
@@ -192,77 +207,106 @@ export default function Billing() {
                             padding: '8px',
                             borderRadius: '6px'
                           }}>
-                            <Zap 
-                              size={20}
-                              style={{ color: 'var(--p-color-text-info)' }}
-                            />
+                            <Zap size={20} style={{ color: 'var(--p-color-text-info)' }} />
                           </div>
                         )}
                         <Text variant="headingMd" as="h2">{plan.name}</Text>
+                        {plan.name === "Premium" && (
+                          <Badge tone="info">Most Popular</Badge>
+                        )}
                       </InlineStack>
-                      {plan.name === "Premium" && (
-                        <Badge tone="info">Most Popular</Badge>
-                      )}
                     </InlineStack>
                     <InlineStack gap="100" align="baseline">
                       <Text variant="heading2xl" as="p">${plan.price}</Text>
                       <Text variant="bodyMd" as="p" tone="subdued">/month</Text>
+                      {plan.name === "Premium" && (
+                        <Text variant="bodySm" tone="subdued">
+                          (billed monthly)
+                        </Text>
+                      )}
                     </InlineStack>
                   </BlockStack>
 
-                  <BlockStack gap="400">
-                    <Text variant="headingSm" as="h3">Features included:</Text>
-                    <List type="bullet">
-                      {plan.features.map((feature, index) => (
-                        <List.Item key={index}>
-                          <InlineStack gap="200" blockAlign="center">
-                            <Check 
-                              size={16} 
-                              style={{ color: 'var(--p-color-text-success)' }}
-                            />
-                            <Text variant="bodyMd" as="span">{feature}</Text>
-                          </InlineStack>
-                        </List.Item>
-                      ))}
-                    </List>
-
-                    {plan.limitations && (
-                      <>
-                        <Text variant="headingSm" as="h3">Limitations:</Text>
-                        <List type="bullet">
-                          {plan.limitations.map((limitation, index) => (
-                            <List.Item key={index}>
-                              <InlineStack gap="200" blockAlign="center">
-                                <X 
-                                  size={16} 
-                                  style={{ color: 'var(--p-color-text-critical)' }}
-                                />
-                                <Text variant="bodyMd" as="span">{limitation}</Text>
-                              </InlineStack>
-                            </List.Item>
-                          ))}
-                        </List>
-                      </>
-                    )}
-                  </BlockStack>
-
-                  <Button
-                    variant={plan.name === "Premium" ? "primary" : "secondary"}
-                    onClick={() => handlePlanChange(plan.name.toLowerCase())}
-                    disabled={selectedPlan === plan.name.toLowerCase()}
-                    size="large"
-                    fullWidth
+                  <Box
+                    background="bg-surface"
+                    padding="400"
+                    borderRadius="200"
+                    shadow="100"
                   >
-                    {selectedPlan === plan.name.toLowerCase() 
-                      ? "Current Plan" 
-                      : plan.name === "Premium" 
-                        ? `Upgrade to ${plan.name}` 
-                        : "Downgrade to Free"}
-                  </Button>
+                    <BlockStack gap="400">
+                      <Text variant="headingSm" as="h3">Features included:</Text>
+                      <List type="bullet">
+                        {plan.features.map((feature, index) => (
+                          <List.Item key={index}>
+                            <InlineStack gap="200" blockAlign="center">
+                              <Check 
+                                size={16} 
+                                style={{ color: 'var(--p-color-text-success)' }}
+                              />
+                              <Text variant="bodyMd" as="span">{feature}</Text>
+                            </InlineStack>
+                          </List.Item>
+                        ))}
+                      </List>
+
+                      {plan.limitations && (
+                        <>
+                          <Text variant="headingSm" as="h3">Limitations:</Text>
+                          <List type="bullet">
+                            {plan.limitations.map((limitation, index) => (
+                              <List.Item key={index}>
+                                <InlineStack gap="200" blockAlign="center">
+                                  <X 
+                                    size={16} 
+                                    style={{ color: 'var(--p-color-text-critical)' }}
+                                  />
+                                  <Text variant="bodyMd" as="span">{limitation}</Text>
+                                </InlineStack>
+                              </List.Item>
+                            ))}
+                          </List>
+                        </>
+                      )}
+                    </BlockStack>
+                  </Box>
+
+                  <Box>
+                    <Button
+                      variant={plan.name === "Premium" ? "primary" : "secondary"}
+                      onClick={() => handlePlanChange(plan.name.toLowerCase())}
+                      disabled={selectedPlan === plan.name.toLowerCase()}
+                      size="large"
+                      fullWidth
+                    >
+                      {selectedPlan === plan.name.toLowerCase() 
+                        ? "Current Plan" 
+                        : plan.name === "Premium" 
+                          ? `Upgrade to ${plan.name}` 
+                          : "Downgrade to Free"}
+                    </Button>
+                    {plan.name === "Premium" && (
+                      <Box paddingBlockStart="200">
+                        <Text variant="bodySm" as="p" tone="subdued" alignment="center">
+                          {PREMIUM_PLAN.trialDays}-day free trial, then ${PREMIUM_PLAN.amount}/month
+                        </Text>
+                      </Box>
+                    )}
+                  </Box>
                 </BlockStack>
               </Box>
             ))}
           </InlineStack>
+        </Layout.Section>
+
+        <Layout.Section>
+          <Box padding="400">
+            <BlockStack gap="200" align="center">
+              <Text variant="headingSm" as="h3">Questions about billing?</Text>
+              <Text variant="bodySm" as="p" tone="subdued">
+                Contact us at support@seowizard.com
+              </Text>
+            </BlockStack>
+          </Box>
         </Layout.Section>
       </Layout>
     </Page>

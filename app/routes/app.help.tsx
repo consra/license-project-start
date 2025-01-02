@@ -10,13 +10,19 @@ import {
   BlockStack,
   Text,
   Box,
-  TextContainer
+  TextContainer,
+  InlineStack,
+  Icon
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
 import { useState, useCallback } from "react";
 import React from "react";
 import { sendNotificationEmail } from "../services/email.server";
+import { 
+  Mail, 
+  HelpCircle 
+} from "lucide-react";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -89,7 +95,11 @@ export default function Help() {
   }, [name, email, question, submit]);
 
   return (
-    <Page title="Help & Support">
+    <Page 
+      title="Help & Support" 
+      subtitle="Get assistance and learn more about SEO Wizard features"
+      divider
+    >
       <Layout>
         {showSuccess && (
           <Layout.Section>
@@ -104,79 +114,167 @@ export default function Help() {
         )}
 
         <Layout.Section>
-          <Card>
-            <BlockStack gap="400">
-              <Text as="h2" variant="headingMd">Contact Support</Text>
-              <Text color="subdued">
-                Have a question? We're here to help!
-              </Text>
-              
-              <TextField
-                label="Your Name"
-                value={name}
-                onChange={setName}
-                autoComplete="name"
-                required
-              />
+          <Box
+            background="bg-surface-secondary"
+            borderRadius="300"
+            padding="600"
+            shadow="200"
+          >
+            <BlockStack gap="600">
+              <InlineStack gap="400" blockAlign="center">
+                <div style={{ 
+                  backgroundColor: 'var(--p-color-bg-success-subdued)',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  boxShadow: 'var(--p-shadow-100)'
+                }}>
+                  <Mail 
+                    size={24}
+                    style={{ color: 'var(--p-color-text-success)' }}
+                  />
+                </div>
+                <BlockStack gap="100">
+                  <Text variant="headingMd" as="h2">Contact Support</Text>
+                  <Text variant="bodySm" tone="subdued">Have a question? We're here to help!</Text>
+                </BlockStack>
+              </InlineStack>
 
-              <TextField
-                label="Email Address"
-                type="email"
-                value={email}
-                onChange={setEmail}
-                autoComplete="email"
-                required
-              />
+              <BlockStack gap="500">
+                <Box
+                  background="bg-surface"
+                  padding="400"
+                  borderRadius="200"
+                  shadow="100"
+                >
+                  <TextField
+                    label="Your Name"
+                    value={name}
+                    onChange={setName}
+                    autoComplete="name"
+                    required
+                  />
+                </Box>
 
-              <TextField
-                label="Your Question"
-                value={question}
-                onChange={setQuestion}
-                multiline
-                minHeight="200px"
-                required
-              />
+                <Box
+                  background="bg-surface"
+                  padding="400"
+                  borderRadius="200"
+                  shadow="100"
+                >
+                  <TextField
+                    label="Email Address"
+                    type="email"
+                    value={email}
+                    onChange={setEmail}
+                    autoComplete="email"
+                    required
+                  />
+                </Box>
 
-              <Box>
+                <Box
+                  background="bg-surface"
+                  padding="400"
+                  borderRadius="200"
+                  shadow="100"
+                >
+                  <TextField
+                    label="Your Question"
+                    value={question}
+                    onChange={setQuestion}
+                    multiline
+                    minHeight="200px"
+                    required
+                  />
+                </Box>
+
                 <Button 
                   primary 
                   onClick={handleSubmit}
                   loading={isSubmitting}
                   disabled={!name || !email || !question}
+                  size="large"
+                  fullWidth
                 >
                   Submit Question
                 </Button>
-              </Box>
+              </BlockStack>
             </BlockStack>
-          </Card>
+          </Box>
         </Layout.Section>
 
         <Layout.Section>
-          <Card>
-            <BlockStack gap="400">
-              <Text as="h2" variant="headingMd">Common Questions</Text>
-              
-              <Text as="h3" variant="headingSm">How do wildcard redirects work?</Text>
-              <Text as="p">Wildcard redirects allow you to create flexible rules using * to match multiple URLs.</Text>
-              
-              <Text as="h3" variant="headingSm">How often are notification emails sent?</Text>
-              <Text as="p">You can choose to receive notifications daily, weekly, or monthly.</Text>
-              
-              <Text as="h3" variant="headingSm">What does the 404 analytics show?</Text>
-              <Text as="p">The analytics dashboard shows your most common broken links and trends over time, helping you identify and fix critical issues.</Text>
-              
-              <Text as="h3" variant="headingSm">Can I export the broken links data?</Text>
-              <Text as="p">Yes, you can export your 404 error data as CSV files for further analysis or record keeping.</Text>
-              
-              <Text as="h3" variant="headingSm">How do I set up automatic redirects?</Text>
-              <Text as="p">Navigate to the Settings page to enable automatic redirects for common misspellings and old URLs.</Text>
-              
-              <Text as="h3" variant="headingSm">What's the difference between exact and wildcard matches?</Text>
-              <Text as="p">Exact matches redirect specific URLs, while wildcards (*) can match multiple similar URLs following a pattern.</Text>
+          <Box
+            background="bg-surface-secondary"
+            borderRadius="300"
+            padding="600"
+            shadow="200"
+          >
+            <BlockStack gap="600">
+              <InlineStack gap="400" blockAlign="center">
+                <div style={{ 
+                  backgroundColor: 'var(--p-color-bg-info-subdued)',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  boxShadow: 'var(--p-shadow-100)'
+                }}>
+                  <HelpCircle 
+                    size={24}
+                    style={{ color: 'var(--p-color-text-info)' }}
+                  />
+                </div>
+                <BlockStack gap="100">
+                  <Text variant="headingMd" as="h2">Common Questions</Text>
+                  <Text variant="bodySm" tone="subdued">Quick answers to frequently asked questions</Text>
+                </BlockStack>
+              </InlineStack>
+
+              <BlockStack gap="500">
+                {FAQs.map((faq, index) => (
+                  <Box
+                    key={index}
+                    background="bg-surface"
+                    padding="400"
+                    borderRadius="200"
+                    shadow="100"
+                  >
+                    <BlockStack gap="200">
+                      <Text variant="headingSm" as="h3" fontWeight="medium">
+                        {faq.question}
+                      </Text>
+                      <Text variant="bodyMd" tone="subdued" as="p">
+                        {faq.answer}
+                      </Text>
+                    </BlockStack>
+                  </Box>
+                ))}
+              </BlockStack>
             </BlockStack>
-          </Card>
+          </Box>
         </Layout.Section>
       </Layout>
     </Page>
   );
-} 
+}
+
+const FAQs = [
+  {
+    question: "How do wildcard redirects work?",
+    answer: "Wildcard redirects allow you to create flexible rules using * to match multiple URLs. For example, /old-blog/* can redirect all old blog URLs to their new location."
+  },
+  {
+    question: "How often are notification emails sent?",
+    answer: "You can customize your notification frequency to receive updates daily, weekly, or monthly based on your preferences in the Settings page."
+  },
+  {
+    question: "What does the 404 analytics show?",
+    answer: "The analytics dashboard provides insights into your most common broken links, traffic patterns, and trends over time to help you identify and fix critical issues."
+  },
+  {
+    question: "Can I export the broken links data?",
+    answer: "Yes, you can export your 404 error data as CSV files for further analysis or record keeping. Look for the export option in the analytics section."
+  },
+  {
+    question: "What's the difference between exact and wildcard matches?",
+    answer: "Exact matches redirect specific URLs, while wildcards (*) can match multiple similar URLs following a pattern, making them more flexible for handling groups of related URLs."
+  }
+]; 

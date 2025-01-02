@@ -30,7 +30,7 @@ export default function App() {
         <Link to="/app/analytics">Analytics</Link>
         <Link to="/app/settings">Notification Settings</Link>
         <Link to="/app/help">Help & Support</Link>
-
+        <Link to="/app/billing">Billing</Link>
       </NavMenu>
       <Outlet />
     </AppProvider>

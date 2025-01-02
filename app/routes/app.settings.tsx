@@ -43,19 +43,15 @@ export default function Settings() {
   const [email, setEmail] = useState(settings?.email || "");
   const [frequency, setFrequency] = useState(settings?.frequency || "weekly");
   const [enabled, setEnabled] = useState(settings?.enabled ?? true);
-  const [autoRedirect, setAutoRedirect] = useState(true);
-  const [threshold, setThreshold] = useState("3");
 
   const handleSubmit = useCallback(() => {
     const formData = new FormData();
     formData.append("email", email);
     formData.append("frequency", frequency);
     formData.append("enabled", enabled.toString());
-    formData.append("autoRedirect", autoRedirect.toString());
-    formData.append("threshold", threshold);
     
     submit(formData, { method: "post" });
-  }, [email, frequency, enabled, autoRedirect, threshold, submit]);
+  }, [email, frequency, enabled, submit]);
 
   return (
     <Page 
@@ -64,16 +60,22 @@ export default function Settings() {
       divider
     >
       <Layout>
-        {/* Email Notifications Section */}
         <Layout.Section>
-          <Card>
-            <Box padding="500">
-              <BlockStack gap="500">
-                <InlineStack gap="200" blockAlign="center">
+          <BlockStack gap="500">
+            <Box
+              background="bg-surface-secondary"
+              borderRadius="300"
+              padding="600"
+
+              shadow="200"
+            >
+              <BlockStack gap="600">
+                <InlineStack gap="400" blockAlign="center">
                   <div style={{ 
                     backgroundColor: 'var(--p-color-bg-success-subdued)',
-                    padding: '12px',
-                    borderRadius: '8px'
+                    padding: '16px',
+                    borderRadius: '12px',
+                    boxShadow: 'var(--p-shadow-100)'
                   }}>
                     <Icon source={EmailIcon} tone="success" />
                   </div>
@@ -83,15 +85,13 @@ export default function Settings() {
                   </BlockStack>
                 </InlineStack>
 
-                <Box
-                  background="bg-surface-secondary"
-                  borderRadius="300"
-                  padding="500"
-                  borderWidth="025"
-                  borderColor="border-subdued"
-                  shadow="100"
-                >
-                  <BlockStack gap="500">
+                <BlockStack gap="500">
+                  <Box
+                    background="bg-surface"
+                    padding="400"
+                    borderRadius="200"
+                    shadow="100"
+                  >
                     <TextField
                       label="Email Address"
                       type="email"
@@ -100,7 +100,14 @@ export default function Settings() {
                       autoComplete="email"
                       helpText="Where to send notifications about new 404 errors"
                     />
+                  </Box>
 
+                  <Box
+                    background="bg-surface"
+                    padding="400"
+                    borderRadius="200"
+                    shadow="100"
+                  >
                     <Select
                       label="Notification Frequency"
                       options={[
@@ -111,12 +118,15 @@ export default function Settings() {
                       value={frequency}
                       onChange={setFrequency}
                     />
+                  </Box>
 
-                    <Box
-                      background="bg-surface"
-                      padding="300"
-                      borderRadius="200"
-                    >
+                  <Box
+                    background="bg-surface"
+                    padding="400"
+                    borderRadius="200"
+                    shadow="100"
+                  >
+                    <BlockStack gap="300">
                       <InlineStack align="space-between" blockAlign="center">
                         <BlockStack gap="100">
                           <Text variant="bodySm" fontWeight="medium">Notification Status</Text>
@@ -124,117 +134,24 @@ export default function Settings() {
                             {enabled ? "You will receive notifications" : "Notifications are disabled"}
                           </Text>
                         </BlockStack>
-                        <Badge tone={enabled ? "success" : "critical"}>
+                        <Badge tone={enabled ? "success" : "critical"} size="large">
                           {enabled ? "Active" : "Inactive"}
                         </Badge>
                       </InlineStack>
-                    </Box>
-
-                    <Button 
-                      onClick={() => setEnabled(!enabled)}
-                      tone={enabled ? "critical" : "success"}
-                    >
-                      {enabled ? "Disable" : "Enable"} Notifications
-                    </Button>
-                  </BlockStack>
-                </Box>
+                      <Button 
+                        disabled={!email || !enabled}
+                        onClick={() => setEnabled(!enabled)}
+                        tone={enabled ? "critical" : "success"}
+                        fullWidth
+                      >
+                        {enabled ? "Disable" : "Enable"} Notifications
+                      </Button>
+                    </BlockStack>
+                  </Box>
+                </BlockStack>
               </BlockStack>
             </Box>
-          </Card>
-        </Layout.Section>
-
-        {/* Auto-Redirect Settings */}
-        <Layout.Section>
-          <Card>
-            <Box padding="500">
-              <BlockStack gap="500">
-                <InlineStack gap="200" blockAlign="center">
-                  <div style={{ 
-                    backgroundColor: 'var(--p-color-bg-info-subdued)',
-                    padding: '12px',
-                    borderRadius: '8px'
-                  }}>
-                    <Icon source={SettingsIcon} tone="info" />
-                  </div>
-                  <BlockStack gap="100">
-                    <Text variant="headingMd" as="h2">Auto-Redirect Settings</Text>
-                    <Text variant="bodySm" tone="subdued">Manage how redirects are handled</Text>
-                  </BlockStack>
-                </InlineStack>
-
-                <Box
-                  background="bg-surface-secondary"
-                  borderRadius="300"
-                  padding="500"
-                  borderWidth="025"
-                  borderColor="border-subdued"
-                  shadow="100"
-                >
-                  <BlockStack gap="500">
-                    <Box
-                      background="bg-surface"
-                      padding="400"
-                      borderRadius="200"
-                    >
-                      <ChoiceList
-                        title="Automatic Redirects"
-                        choices={[
-                          {
-                            label: "Automatically create redirects for common 404 errors",
-                            value: "auto",
-                            helpText: "System will suggest redirects based on similar URLs"
-                          }
-                        ]}
-                        selected={autoRedirect ? ["auto"] : []}
-                        onChange={(value) => setAutoRedirect(value.includes("auto"))}
-                      />
-                    </Box>
-
-                    <TextField
-                      label="Error Threshold"
-                      type="number"
-                      value={threshold}
-                      onChange={setThreshold}
-                      helpText="Minimum number of 404s before suggesting a redirect"
-                      autoComplete="off"
-                    />
-
-                    <Box
-                      background="bg-surface-active"
-                      padding="400"
-                      borderRadius="200"
-                      shadow="100"
-                    >
-                      <InlineStack gap="200" align="center">
-                        <div style={{ 
-                          backgroundColor: 'var(--p-color-bg-info)',
-                          padding: '8px',
-                          borderRadius: '6px'
-                        }}>
-                          <Icon source={NotificationIcon} tone="info" />
-                        </div>
-                        <BlockStack gap="100">
-                          <Text variant="bodySm" fontWeight="medium">Active Redirects</Text>
-                          <Text variant="bodySm" tone="subdued">
-                            Currently managing {redirectCount} redirects
-                          </Text>
-                        </BlockStack>
-                      </InlineStack>
-                    </Box>
-                  </BlockStack>
-                </Box>
-              </BlockStack>
-            </Box>
-          </Card>
-        </Layout.Section>
-
-        {/* Save Button */}
-        <Layout.Section>
-          <Box padding="400">
-            <Button primary size="large" onClick={handleSubmit} fullWidth>
-              Save Settings
-            </Button>
-          </Box>
+          </BlockStack>
         </Layout.Section>
       </Layout>
     </Page>
