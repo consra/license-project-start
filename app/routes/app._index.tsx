@@ -1,10 +1,11 @@
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { 
   Card,
   Layout, 
   Page, 
   Button, 
   Text, 
+  Modal, 
   IndexTable,
   Badge,
   useIndexResourceState,
@@ -16,8 +17,9 @@ import {
 import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import React, { useCallback } from "react";
-import { RefreshIcon } from "@shopify/polaris-icons";
+import React, { useState, useCallback } from "react";
+import { RefreshIcon, InfoIcon } from "@shopify/polaris-icons";
+import { Icon } from '@shopify/polaris';
 
 type Theme = {
   id: string;

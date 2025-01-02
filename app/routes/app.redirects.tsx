@@ -4,8 +4,6 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "@remix-run/react";
 import { 
   ArrowRightIcon, 
-  RefreshIcon, 
-  FolderIcon, 
   CircleUpIcon,
   LinkIcon 
 } from "@shopify/polaris-icons";
@@ -42,7 +40,6 @@ export default function Redirects() {
     <Page 
       title="Redirect Manager"
       subtitle="Create and manage redirects for your store's URLs"
-      divider
     >
       <Layout>
         <Layout.Section>
@@ -60,7 +57,7 @@ export default function Redirects() {
                           label={
                             <InlineStack gap="200" align="center">
                               <Icon source={LinkIcon} tone="subdued" />
-                              <Text>From Path</Text>
+                              <Text as="span">From Path</Text>
                             </InlineStack>
                           }
                           value={fromPath}
@@ -74,9 +71,11 @@ export default function Redirects() {
                       <div style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
-                        paddingTop: '24px'
+                        paddingTop: '24px',
+                        margin: '0 4px',
+                        color: 'var(--p-color-text-success)'
                       }}>
-                        <Icon source={ArrowRightIcon} tone="success" />
+                        →
                       </div>
 
                       <div style={{ flex: 1 }}>
@@ -84,7 +83,7 @@ export default function Redirects() {
                           label={
                             <InlineStack gap="200" align="center">
                               <Icon source={LinkIcon} tone="success" />
-                              <Text>To Path</Text>
+                              <Text as="span">To Path</Text>
                             </InlineStack>
                           }
                           value={toPath}
@@ -103,6 +102,7 @@ export default function Redirects() {
                       onClick={handleSubmit}
                       disabled={!fromPath || !toPath}
                       icon={CircleUpIcon}
+                      size="slim"
                     >
                       Add Redirect
                     </Button>
@@ -122,17 +122,10 @@ export default function Redirects() {
                     <InlineStack gap="300" align="start">
                       <Text variant="headingMd" as="h2">Active Redirects</Text>
                     </InlineStack>
-                    <Text variant="bodySm" tone="subdued">
+                    <Text variant="bodySm" tone="subdued" as="span">
                       Manage your store's URL redirects
                     </Text>
                   </BlockStack>
-                  <Button 
-                    variant="plain" 
-                    onClick={loadRedirects}
-                    icon={RefreshIcon}
-                  >
-                    Refresh
-                  </Button>
                 </InlineStack>
 
                 {redirects.length > 0 ? (
@@ -157,7 +150,7 @@ export default function Redirects() {
                           </InlineStack>
                         </Box>,
                         <InlineStack gap="200" align="center">
-                          <Icon source={ArrowRightIcon} tone="success" />
+                          <Text variant="bodyMd" as="span">→</Text>
                           <Text variant="bodyMd" as="span">{r.to_path}</Text>
                         </InlineStack>,
                         <Badge tone="success">Active</Badge>,
@@ -172,7 +165,6 @@ export default function Redirects() {
                     background="bg-surface-secondary"
                     padding="500"
                     borderRadius="200"
-                    textAlign="center"
                   >
                     <BlockStack gap="300" align="center">
                       <BlockStack gap="200">
