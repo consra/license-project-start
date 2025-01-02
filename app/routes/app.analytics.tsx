@@ -102,15 +102,58 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     take: 5,
   });
 
+  const [
+    totalRedirects,
+    recentErrors,
+    handledErrors,
+    topReferrers
+  ] = await Promise.all([
+    prisma.redirect.count({
+      where: { shopDomain: session.shop }
+    }),
+    prisma.notFoundError.count({
+      where: {
+        shopDomain: session.shop,
+        timestamp: {
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // last 24h
+        }
+      }
+    }),
+    prisma.notFoundError.count({
+      where: {
+        shopDomain: session.shop,
+        redirected: true
+      }
+    }),
+    prisma.notFoundError.groupBy({
+      by: ['referer'],
+      where: { shopDomain: session.shop },
+      _count: true,
+      orderBy: [
+        {
+          referer: 'desc'
+        }
+      ],
+      take: 3
+    })
+  ]);
+
   return json({
     errors,
     topPaths,
     range,
+    additionalMetrics: {
+      totalRedirects,
+      recentErrors,
+      handledErrors,
+      handledPercentage: Math.round((handledErrors / errors.length) * 100),
+      topReferrers
+    }
   });
 };
 
 export default function Analytics() {
-  const { errors, topPaths, range } = useLoaderData<typeof loader>();
+  const { errors, topPaths, range, additionalMetrics } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [selectedRange, setSelectedRange] = useState(range);
 
@@ -152,8 +195,8 @@ export default function Analytics() {
 
   return (
     <Page 
-      title="404 Analytics" 
-      subtitle="Track and analyze your store's broken links and redirects"
+      title="404 Analytics Dashboard" 
+      subtitle="Monitor and analyze your store's broken links and redirects performance"
       divider
     >
       <Layout>
@@ -161,34 +204,52 @@ export default function Analytics() {
         <Layout.Section>
           <BlockStack gap="400">
             <InlineStack gap="400" wrap={false}>
-              <Card>
+              <Card background="bg-surface-secondary">
                 <Box padding="400">
                   <BlockStack gap="200" align="center">
-                    <Icon source={BarChartIcon} tone="success" />
+                    <div style={{ 
+                      backgroundColor: 'var(--p-color-bg-success-subdued)',
+                      padding: '12px',
+                      borderRadius: '8px'
+                    }}>
+                      <Icon source={BarChartIcon} tone="success" />
+                    </div>
                     <Text variant="headingMd" as="h3">Total 404s</Text>
-                    <Text variant="headingLg" as="p">
+                    <Text variant="headingXl" as="p" fontWeight="bold">
                       {errors.reduce((sum, error) => sum + error._count, 0)}
                     </Text>
                   </BlockStack>
                 </Box>
               </Card>
-              <Card>
+              <Card background="bg-surface-secondary">
                 <Box padding="400">
                   <BlockStack gap="200" align="center">
-                    {/* <Icon source={TimelineIcon} tone="success" /> */}
+                    <div style={{ 
+                      backgroundColor: 'var(--p-color-bg-info-subdued)',
+                      padding: '12px',
+                      borderRadius: '8px'
+                    }}>
+                      <Icon source={ChartLineIcon} tone="info" />
+                    </div>
                     <Text variant="headingMd" as="h3">Average Daily</Text>
-                    <Text variant="headingLg" as="p">
+                    <Text variant="headingXl" as="p" fontWeight="bold">
                       {Math.round(errors.reduce((sum, error) => sum + error._count, 0) / errors.length)}
                     </Text>
                   </BlockStack>
                 </Box>
               </Card>
-              <Card>
+              <Card background="bg-surface-secondary">
                 <Box padding="400">
                   <BlockStack gap="200" align="center">
-                    <Icon source={AlertDiamondIcon} tone="warning" />
+                    <div style={{ 
+                      backgroundColor: 'var(--p-color-bg-warning-subdued)',
+                      padding: '12px',
+                      borderRadius: '8px'
+                    }}>
+                      <Icon source={AlertDiamondIcon} tone="warning" />
+                    </div>
                     <Text variant="headingMd" as="h3">Peak Errors</Text>
-                    <Text variant="headingLg" as="p">
+                    <Text variant="headingXl" as="p" fontWeight="bold">
                       {Math.max(...errors.map(error => error._count))}
                     </Text>
                   </BlockStack>
@@ -198,43 +259,165 @@ export default function Analytics() {
           </BlockStack>
         </Layout.Section>
 
+        <Layout.Section>
+          <Card>
+            <Box padding="500">
+              <BlockStack gap="500">
+                <InlineStack gap="200" align="center">
+                  <Icon source={ChartLineIcon} tone="info" />
+                  <Text variant="headingMd" as="h2">Additional Insights</Text>
+                </InlineStack>
+
+                <InlineStack gap="500" wrap={false}>
+                  {/* Resolution Rate Card */}
+                  <Box 
+                    padding="400" 
+                    borderRadius="300"
+                    shadow="200"
+                    width="100%"
+                    background="bg-surface-secondary"
+                    borderWidth="025"
+                    borderColor="border-success"
+                  >
+                    <BlockStack gap="300" align="center">
+                      <Text variant="headingSm" as="h3">Resolution Rate</Text>
+                      <div style={{ 
+                        backgroundColor: 'var(--p-color-bg-success-subdued)',
+                        padding: '16px',
+                        borderRadius: '12px',
+                        width: '100%',
+                        textAlign: 'center'
+                      }}>
+                        <Text variant="heading2xl" as="p" fontWeight="bold">
+                          {additionalMetrics.handledPercentage}%
+                        </Text>
+                      </div>
+                      <Text variant="bodySm" tone="subdued">
+                        {additionalMetrics.handledErrors} of {errors.length} errors handled
+                      </Text>
+                    </BlockStack>
+                  </Box>
+
+                  {/* Active Redirects Card */}
+                  <Box 
+                    padding="400" 
+                    borderRadius="300"
+                    shadow="200"
+                    width="100%"
+                    background="bg-surface-secondary"
+                    borderWidth="025"
+                    borderColor="border-info"
+                  >
+                    <BlockStack gap="300" align="center">
+                      <Text variant="headingSm" as="h3">Active Redirects</Text>
+                      <div style={{ 
+                        backgroundColor: 'var(--p-color-bg-info-subdued)',
+                        padding: '16px',
+                        borderRadius: '12px',
+                        width: '100%',
+                        textAlign: 'center'
+                      }}>
+                        <Text variant="heading2xl" as="p" fontWeight="bold">
+                          {additionalMetrics.totalRedirects}
+                        </Text>
+                      </div>
+                      <Text variant="bodySm" tone="subdued">
+                        Total active redirects
+                      </Text>
+                    </BlockStack>
+                  </Box>
+
+                  {/* Top Sources Card */}
+                  <Box 
+                    padding="400" 
+                    borderRadius="300"
+                    shadow="200"
+                    width="100%"
+                    background="bg-surface-secondary"
+                    borderWidth="025"
+                    borderColor="border-warning"
+                  >
+                    <BlockStack gap="300">
+                      <Text variant="headingSm" as="h3" alignment="center">Top Sources</Text>
+                      <BlockStack gap="200">
+                        {additionalMetrics.topReferrers.map((ref, index) => (
+                          <Box
+                            key={ref.referer || 'direct'}
+                            background="bg-surface"
+                            padding="300"
+                            borderRadius="200"
+                            shadow="100"
+                          >
+                            <InlineStack align="space-between">
+                              <Text variant="bodyMd" fontWeight="medium">
+                                {ref.referer || 'Direct'}
+                              </Text>
+                              <Text variant="bodyMd" tone="subdued">
+                                {ref._count}
+                              </Text>
+                            </InlineStack>
+                          </Box>
+                        ))}
+                      </BlockStack>
+                    </BlockStack>
+                  </Box>
+                </InlineStack>
+              </BlockStack>
+            </Box>
+          </Card>
+        </Layout.Section>
+
         {/* Time Series Chart */}
         <Layout.Section>
           <Card>
             <Box padding="500">
-              <BlockStack gap="400">
-                <InlineStack align="space-between">
+              <BlockStack gap="500">
+                <InlineStack align="space-between" blockAlign="center">
                   <BlockStack gap="200">
-                    <Text variant="headingMd" as="h2">404 Errors Over Time</Text>
+                    <InlineStack gap="200" align="center">
+                      <Icon source={ChartLineIcon} tone="success" />
+                      <Text variant="headingMd" as="h2">404 Errors Over Time</Text>
+                    </InlineStack>
                     <Text variant="bodySm" tone="subdued">
-                      Track error frequency patterns
+                      Track and analyze error patterns over different time periods
                     </Text>
                   </BlockStack>
-                  <Select
-                    label="Time Range"
-                    labelInline
-                    options={options}
-                    onChange={handleRangeChange}
-                    value={selectedRange}
-                  />
+                  <Box minWidth="200px">
+                    <Select
+                      label="Time Range"
+                      labelInline
+                      options={options}
+                      onChange={handleRangeChange}
+                      value={selectedRange}
+                    />
+                  </Box>
                 </InlineStack>
                 
                 <Box 
                   background="bg-surface-secondary" 
-                  padding="400" 
-                  borderRadius="200"
+                  padding="600" 
+                  borderRadius="300"
+                  borderWidth="025"
+                  borderColor="border-subdued"
+                  shadow="100"
                 >
-                  <div style={{ height: '300px' }}>
+                  <div style={{ height: '350px' }}>
                     <Line 
-                      data={lineChartData}
+                      data={{
+                        ...lineChartData,
+                        datasets: [{
+                          ...lineChartData.datasets[0],
+                          borderColor: 'var(--p-color-text-success)',
+                          backgroundColor: 'var(--p-color-bg-success-subdued)',
+                          fill: true,
+                          borderWidth: 2,
+                        }]
+                      }}
                       options={{
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
                           legend: {
-                            position: 'top' as const,
-                          },
-                          title: {
                             display: false
                           }
                         },
@@ -243,6 +426,14 @@ export default function Analytics() {
                             beginAtZero: true,
                             ticks: {
                               precision: 0
+                            },
+                            grid: {
+                              color: 'var(--p-color-border-subdued)'
+                            }
+                          },
+                          x: {
+                            grid: {
+                              color: 'var(--p-color-border-subdued)'
                             }
                           }
                         }
@@ -259,31 +450,41 @@ export default function Analytics() {
         <Layout.Section>
           <Card>
             <Box padding="500">
-              <BlockStack gap="400">
+              <BlockStack gap="500">
                 <BlockStack gap="200">
-                  <Text variant="headingMd" as="h2">Most Common 404 Paths</Text>
+                  <InlineStack gap="200" align="center">
+                    <Icon source={BarcodeIcon} tone="info" />
+                    <Text variant="headingMd" as="h2">Most Common 404 Paths</Text>
+                  </InlineStack>
                   <Text variant="bodySm" tone="subdued">
-                    Top paths generating errors
+                    Identify frequently occurring broken links
                   </Text>
                 </BlockStack>
                 
                 <Box 
                   background="bg-surface-secondary" 
-                  padding="400" 
-                  borderRadius="200"
+                  padding="600" 
+                  borderRadius="300"
+                  borderWidth="025"
+                  borderColor="border-subdued"
+                  shadow="100"
                 >
-                  <div style={{ height: '300px' }}>
+                  <div style={{ height: '350px' }}>
                     <Bar 
-                      data={barChartData}
+                      data={{
+                        ...barChartData,
+                        datasets: [{
+                          ...barChartData.datasets[0],
+                          backgroundColor: 'var(--p-color-bg-info)',
+                          borderRadius: 6,
+                        }]
+                      }}
                       options={{
                         responsive: true,
                         maintainAspectRatio: false,
                         indexAxis: 'y' as const,
                         plugins: {
                           legend: {
-                            display: false
-                          },
-                          title: {
                             display: false
                           }
                         },
@@ -292,6 +493,14 @@ export default function Analytics() {
                             beginAtZero: true,
                             ticks: {
                               precision: 0
+                            },
+                            grid: {
+                              color: 'var(--p-color-border-subdued)'
+                            }
+                          },
+                          y: {
+                            grid: {
+                              display: false
                             }
                           }
                         }
