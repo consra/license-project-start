@@ -145,155 +145,168 @@ export default function Index() {
     <Page title="Welcome to SEO Wizzard 👋" divider>
       <Layout>
         <Layout.Section>
-          <LegacyCard>
-            <LegacyCard.Section>
-              <BlockStack gap="600">
-                <InlineStack
-                  gap="400"
-                  align="start"
-                  style={{
-                    padding: '24px',
-                    backgroundColor: 'var(--p-surface-subdued)',
-                    borderRadius: '12px',
-                    border: '1px solid var(--p-border-subdued)',
-                    boxShadow: 'var(--p-shadow-card)'
-                  }}
-                >
-                  <BlockStack gap="200">
-                    <Text as="h2" variant="headingSm">
-                      Getting Started
-                    </Text>
-                    <Text as="p" variant="bodyMd" tone="subdued">
-                      Get started by activating the app in your themes to enable automatic 404 redirects and improve your store's SEO. 
-                      Our tools help you track and fix broken links automatically.
-                    </Text>
-                  </BlockStack>
-
-                  <BlockStack gap="400">
-                    <Text variant="headingMd" as="h3">
-                      Quick Setup Guide
-                    </Text>
-                    <div style={{ 
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(3, 1fr)',
-                      gap: '16px',
-                      width: '100%'
-                    }}>
-                      {[
-                        {
-                          step: 1,
-                          title: "Choose Theme",
-                          description: "Select the theme you want to activate the app on"
-                        },
-                        {
-                          step: 2,
-                          title: "Configure App",
-                          description: "Enable the app toggle in Theme Editor"
-                        },
-                        {
-                          step: 3,
-                          title: "Save Changes",
-                          description: "Apply changes to activate the app"
-                        }
-                      ].map(({ step, title, description }) => (
-                        <div
-                          key={step}
-                          style={{
-                            padding: '16px',
-                            borderRadius: '8px',
-                            backgroundColor: 'var(--p-surface-subdued)',
-                            border: '1px solid var(--p-border-subdued)'
-                          }}
-                        >
-                          <BlockStack gap="200">
-                            <Badge tone="info" size="large">{step}</Badge>
-                            <Text variant="headingSm" as="h4">{title}</Text>
-                            <Text variant="bodySm" tone="subdued">{description}</Text>
-                          </BlockStack>
-                        </div>
-                      ))}
-                    </div>
-                  </BlockStack>
-                </InlineStack>
-              </BlockStack>
-            </LegacyCard.Section>
-          </LegacyCard>
-        </Layout.Section>
-
-        <Layout.Section>
-          <Box paddingBlockStart="400" paddingBlockEnd="400">
-            <InlineStack align="space-between">
-              <Text as="h3" variant="headingMd">
-                Your Themes ({themes.length})
-              </Text>
-              <Button 
-                onClick={handleRefresh}
-                variant="plain"
-                icon={RefreshIcon}
-              >
-                Refresh
-              </Button>
-            </InlineStack>
-          </Box>
-          <Card padding="0">
-            {themes.length > 0 ? (
-              <IndexTable
-                resourceName={resourceName}
-                itemCount={themes.length}
-                headings={[
-                  { title: 'App Status', alignment: 'start' },
-                  { title: 'Theme Name', alignment: 'start' },
-                  { title: 'Actions', alignment: 'end' },
-                ]}
-                selectable={false}
-              >
-                {themes.map((theme, index) => (
-                  <IndexTable.Row
-                    id={theme.id}
-                    key={theme.id}
-                    position={index}
-                  >
-                    <IndexTable.Cell>
-                      <Badge tone={theme.isActive ? "success" : "critical"}>
-                        {theme.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </IndexTable.Cell>
-                    <IndexTable.Cell>
-                      <Text variant="bodyMd" fontWeight="bold" as="span">
-                        {theme.name} {theme.role === "main" && "(Live)"}
-                      </Text>
-                    </IndexTable.Cell>
-                    <IndexTable.Cell>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <ButtonGroup>
-                          <Button 
-                            onClick={() => window.open(getThemeEditorUrl(theme.id), '_blank')}
-                            tone={theme.isActive ? "critical" : "success"}
-                          >
-                            {theme.isActive ? "Deactivate" : "Configure"}
-                          </Button>
-                        </ButtonGroup>
-                      </div>
-                    </IndexTable.Cell>
-                  </IndexTable.Row>
-                ))}
-              </IndexTable>
-            ) : (
-              <Box padding="400" textAlign="center">
-                <BlockStack gap="400" align="center">
-                  <Text as="p" variant="bodyMd" color="subdued">
-                    No themes found. Please make sure you have at least one theme installed in your store.
+          <BlockStack gap="500">
+            {/* Welcome Banner */}
+            <Box
+              background="bg-surface-secondary"
+              borderRadius="300"
+              padding="500"
+              shadow="card"
+            >
+              <BlockStack gap="400">
+                <InlineStack gap="400" align="center">
+                  <div style={{ fontSize: '28px' }}>✨</div>
+                  <Text variant="headingLg" as="h1">
+                    Let's set up your 404 redirects
                   </Text>
-                  <Button
-                    url={`https://${shop}/admin/themes`}
-                    external
-                  >
-                    Manage Themes
-                  </Button>
+                </InlineStack>
+                <Text as="p" variant="bodyMd" tone="subdued">
+                  Improve your store's SEO by automatically managing 404 redirects and tracking broken links. 
+                  Follow the quick setup guide below to get started.
+                </Text>
+              </BlockStack>
+            </Box>
+
+            {/* Setup Guide */}
+            <Card roundedAbove="xl">
+              <Box padding="500">
+                <BlockStack gap="500">
+                  <Text variant="headingMd" as="h2">Quick Setup Guide</Text>
+                  <div style={{ 
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                    gap: '16px'
+                  }}>
+                    {[
+                      {
+                        step: 1,
+                        title: "Choose Theme",
+                        description: "Select the theme you want to activate the app on",
+                        icon: "🎨"
+                      },
+                      {
+                        step: 2,
+                        title: "Configure App",
+                        description: "Enable the app toggle in Theme Editor",
+                        icon: "⚙️"
+                      },
+                      {
+                        step: 3,
+                        title: "Save Changes",
+                        description: "Apply changes to activate the app",
+                        icon: "✅"
+                      }
+                    ].map(({ step, title, description, icon }) => (
+                      <Box
+                        key={step}
+                        background="bg-surface-secondary"
+                        padding="400"
+                        borderRadius="200"
+                      >
+                        <BlockStack gap="300">
+                          <InlineStack gap="200" align="center">
+                            <div style={{ fontSize: '20px' }}>{icon}</div>
+                            <Text variant="headingSm" as="h3">{title}</Text>
+                          </InlineStack>
+                          <Text variant="bodyMd" tone="subdued">{description}</Text>
+                        </BlockStack>
+                      </Box>
+                    ))}
+                  </div>
                 </BlockStack>
               </Box>
-            )}
-          </Card>
+            </Card>
+
+            {/* Themes Section */}
+            <Card roundedAbove="xl">
+              <Box padding="500">
+                <BlockStack gap="400">
+                  <InlineStack align="space-between">
+                    <InlineStack gap="200" align="center">
+                      <Text as="h2" variant="headingMd">
+                        Your Themes ({themes.length})
+                      </Text>
+                      <Text as="p" variant="bodySm" tone="subdued">
+                        Manage app activation for each theme
+                      </Text>
+                    </InlineStack>
+                    <Button 
+                      onClick={handleRefresh}
+                      variant="plain"
+                      icon={RefreshIcon}
+                    >
+                      Refresh
+                    </Button>
+                  </InlineStack>
+
+                  {themes.length > 0 ? (
+                    <Box paddingBlockStart="400">
+                      <IndexTable
+                        resourceName={resourceName}
+                        itemCount={themes.length}
+                        headings={[
+                          { title: 'App Status', alignment: 'start' },
+                          { title: 'Theme Name', alignment: 'start' },
+                          { title: 'Actions', alignment: 'end' },
+                        ]}
+                        selectable={false}
+                      >
+                        {themes.map((theme, index) => (
+                          <IndexTable.Row
+                            id={theme.id}
+                            key={theme.id}
+                            position={index}
+                          >
+                            <IndexTable.Cell>
+                              <Badge tone={theme.isActive ? "success" : "critical"}>
+                                {theme.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            </IndexTable.Cell>
+                            <IndexTable.Cell>
+                              <Text variant="bodyMd" fontWeight="bold" as="span">
+                                {theme.name} {theme.role === "main" && "(Live)"}
+                              </Text>
+                            </IndexTable.Cell>
+                            <IndexTable.Cell>
+                              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <ButtonGroup>
+                                  <Button 
+                                    onClick={() => window.open(getThemeEditorUrl(theme.id), '_blank')}
+                                    tone={theme.isActive ? "critical" : "success"}
+                                  >
+                                    {theme.isActive ? "Deactivate" : "Configure"}
+                                  </Button>
+                                </ButtonGroup>
+                              </div>
+                            </IndexTable.Cell>
+                          </IndexTable.Row>
+                        ))}
+                      </IndexTable>
+                    </Box>
+                  ) : (
+                    <Box
+                      background="bg-surface-secondary"
+                      padding="500"
+                      borderRadius="200"
+                      textAlign="center"
+                    >
+                      <BlockStack gap="300" align="center">
+                        <Text as="p" variant="bodyMd" tone="subdued">
+                          No themes found. Please make sure you have at least one theme installed in your store.
+                        </Text>
+                        <Button
+                          url={`https://${shop}/admin/themes`}
+                          external
+                        >
+                          Manage Themes
+                        </Button>
+                      </BlockStack>
+                    </Box>
+                  )}
+                </BlockStack>
+              </Box>
+            </Card>
+          </BlockStack>
         </Layout.Section>
       </Layout>
     </Page>

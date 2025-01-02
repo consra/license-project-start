@@ -70,14 +70,20 @@ export default function BrokenLinks() {
   ]);
 
   return (
-    <Page title="New Broken Links">
+    <Page 
+      title="New Broken Links"
+      subtitle="View and fix recent 404 errors by creating redirects for broken links."
+    >
+      <Banner tone="warning">
+        <Text variant="headingSm" as="h2">
+          These are new broken links detected on your store that haven't been redirected yet. 
+          Click "Fix" to create a redirect for any broken URL.
+        </Text>
+      </Banner>
       <Layout>
         <Layout.Section>
-          <Card>
-            <Banner tone="warning">
-              <p>Showing new 404 errors that need to be fixed for {shop}</p>
-            </Banner>
-          </Card>
+
+
         </Layout.Section>
 
         <Layout.Section>
