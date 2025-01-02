@@ -10,7 +10,10 @@ import {
   BlockStack,
   Text,
   Banner,
-  Grid
+  Grid,
+  Box,
+  Icon,
+  InlineStack
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
@@ -28,6 +31,12 @@ import {
   BarElement,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
+import { 
+  BarcodeIcon, 
+  ChartLineIcon,
+  AlertDiamondIcon,
+} from "@shopify/polaris-icons";
+import { BarChartIcon } from "lucide-react";
 
 ChartJS.register(
   CategoryScale,
@@ -142,55 +151,156 @@ export default function Analytics() {
   };
 
   return (
-    <Page title="404 Analytics">
+    <Page 
+      title="404 Analytics" 
+      subtitle="Track and analyze your store's broken links and redirects"
+      divider
+    >
       <Layout>
+        {/* Metrics Overview */}
+        <Layout.Section>
+          <BlockStack gap="400">
+            <InlineStack gap="400" wrap={false}>
+              <Card>
+                <Box padding="400">
+                  <BlockStack gap="200" align="center">
+                    <Icon source={BarChartIcon} tone="success" />
+                    <Text variant="headingMd" as="h3">Total 404s</Text>
+                    <Text variant="headingLg" as="p">
+                      {errors.reduce((sum, error) => sum + error._count, 0)}
+                    </Text>
+                  </BlockStack>
+                </Box>
+              </Card>
+              <Card>
+                <Box padding="400">
+                  <BlockStack gap="200" align="center">
+                    {/* <Icon source={TimelineIcon} tone="success" /> */}
+                    <Text variant="headingMd" as="h3">Average Daily</Text>
+                    <Text variant="headingLg" as="p">
+                      {Math.round(errors.reduce((sum, error) => sum + error._count, 0) / errors.length)}
+                    </Text>
+                  </BlockStack>
+                </Box>
+              </Card>
+              <Card>
+                <Box padding="400">
+                  <BlockStack gap="200" align="center">
+                    <Icon source={AlertDiamondIcon} tone="warning" />
+                    <Text variant="headingMd" as="h3">Peak Errors</Text>
+                    <Text variant="headingLg" as="p">
+                      {Math.max(...errors.map(error => error._count))}
+                    </Text>
+                  </BlockStack>
+                </Box>
+              </Card>
+            </InlineStack>
+          </BlockStack>
+        </Layout.Section>
+
+        {/* Time Series Chart */}
         <Layout.Section>
           <Card>
-            <BlockStack gap="400">
-              <Select
-                label="Time Range"
-                options={options}
-                onChange={handleRangeChange}
-                value={selectedRange}
-              />
-              
-              <div style={{ height: '300px' }}>
-                <Line 
-                  data={lineChartData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      title: {
-                        display: true,
-                        text: '404 Errors Over Time'
-                      }
-                    }
-                  }}
-                />
-              </div>
-            </BlockStack>
+            <Box padding="500">
+              <BlockStack gap="400">
+                <InlineStack align="space-between">
+                  <BlockStack gap="200">
+                    <Text variant="headingMd" as="h2">404 Errors Over Time</Text>
+                    <Text variant="bodySm" tone="subdued">
+                      Track error frequency patterns
+                    </Text>
+                  </BlockStack>
+                  <Select
+                    label="Time Range"
+                    labelInline
+                    options={options}
+                    onChange={handleRangeChange}
+                    value={selectedRange}
+                  />
+                </InlineStack>
+                
+                <Box 
+                  background="bg-surface-secondary" 
+                  padding="400" 
+                  borderRadius="200"
+                >
+                  <div style={{ height: '300px' }}>
+                    <Line 
+                      data={lineChartData}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: {
+                            position: 'top' as const,
+                          },
+                          title: {
+                            display: false
+                          }
+                        },
+                        scales: {
+                          y: {
+                            beginAtZero: true,
+                            ticks: {
+                              precision: 0
+                            }
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                </Box>
+              </BlockStack>
+            </Box>
           </Card>
         </Layout.Section>
 
+        {/* Top Paths Chart */}
         <Layout.Section>
           <Card>
-            <Text variant="headingMd" as="h2">Top 404 Paths</Text>
-            <div style={{ height: '300px' }}>
-              <Bar 
-                data={barChartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    title: {
-                      display: true,
-                      text: 'Most Common 404 Paths'
-                    }
-                  }
-                }}
-              />
-            </div>
+            <Box padding="500">
+              <BlockStack gap="400">
+                <BlockStack gap="200">
+                  <Text variant="headingMd" as="h2">Most Common 404 Paths</Text>
+                  <Text variant="bodySm" tone="subdued">
+                    Top paths generating errors
+                  </Text>
+                </BlockStack>
+                
+                <Box 
+                  background="bg-surface-secondary" 
+                  padding="400" 
+                  borderRadius="200"
+                >
+                  <div style={{ height: '300px' }}>
+                    <Bar 
+                      data={barChartData}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y' as const,
+                        plugins: {
+                          legend: {
+                            display: false
+                          },
+                          title: {
+                            display: false
+                          }
+                        },
+                        scales: {
+                          x: {
+                            beginAtZero: true,
+                            ticks: {
+                              precision: 0
+                            }
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                </Box>
+              </BlockStack>
+            </Box>
           </Card>
         </Layout.Section>
       </Layout>
