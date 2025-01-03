@@ -1,9 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, Page, Layout, TextField, Button, DataTable, Text, BlockStack, Box, InlineStack, Badge, Icon, Pagination, TextField as SearchField } from "@shopify/polaris";
 import { useState, useCallback } from "react";
 import { json, useLoaderData, useNavigate } from "@remix-run/react";
 import { 
-  ArrowRightIcon, 
   CircleUpIcon,
   LinkIcon,
   DeleteIcon,
@@ -56,13 +55,17 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function Redirects() {
-
   const [fromPath, setFromPath] = useState("");
   const [toPath, setToPath] = useState("");
   const { redirects, total, page, pageSize } = useLoaderData<typeof loader>();
+  console.log("redirects", JSON.stringify(redirects));
   const [searchValue, setSearchValue] = useState("");
   const navigate = useNavigate();
   const [currentRedirects, setRedirects] = useState(redirects);
+
+  useEffect(() => {
+    setRedirects(redirects);
+  }, [redirects]);
 
   const handleSearch = useCallback((value: string) => {
     setSearchValue(value);
@@ -84,6 +87,7 @@ export default function Redirects() {
     });
     
     if (response.ok) {
+      navigate(`?page=1`);
       shopify.toast.show("Redirect created successfully");
       setFromPath("");
       setToPath("");
@@ -213,29 +217,29 @@ export default function Redirects() {
                       rows={currentRedirects.map(r => [
                         <Box 
                           background="bg-surface-secondary" 
-                          padding="200" 
+                          padding="100" 
                           borderRadius="150"
                         >
-                          <InlineStack gap="200" align="center">
+                          <InlineStack gap="100" align="center">
                             <Text variant="bodyMd" as="span">{r.fromPath}</Text>
                           </InlineStack>
                         </Box>,
-                        <InlineStack gap="200" align="center">
+                        <InlineStack gap="100" align="center">
                           <Text variant="bodyMd" as="span">{r.toPath}</Text>
                         </InlineStack>,
                         <Badge tone="success">Active</Badge>,
-                        <InlineStack gap="200" align="end">
-                          <Text variant="bodyMd" as="span">
-                            {new Date(r.createdAt).toLocaleDateString()}
-                          </Text>
+                        <InlineStack gap="100" align="space-between">
+                          <InlineStack gap="100" align="start">
+                            <Text variant="bodyMd" as="span">
+                              {new Date(r.createdAt).toLocaleDateString()}
+                            </Text>
+                          </InlineStack>
                           <Button 
                             icon={DeleteIcon}
                             tone="critical"
                             variant="plain"
                             onClick={() => handleDelete(r.fromPath)}
-                          >
-
-                          </Button>
+                          />
                         </InlineStack>
                       ])}
                     />
