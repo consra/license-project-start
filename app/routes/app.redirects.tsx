@@ -1,40 +1,54 @@
 import React from "react";
 import { Card, Page, Layout, TextField, Button, DataTable, Text, BlockStack, Box, InlineStack, Badge, Icon } from "@shopify/polaris";
 import { useState, useCallback } from "react";
-import { useNavigate } from "@remix-run/react";
+import { json, useLoaderData, useNavigate } from "@remix-run/react";
 import { 
   ArrowRightIcon, 
   CircleUpIcon,
   LinkIcon 
 } from "@shopify/polaris-icons";
+import { LoaderFunctionArgs } from "@remix-run/node";
+import { authenticate } from "app/shopify.server";
+import { prisma } from "../db.server";
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
+
+  const redirects = await prisma.redirect.findMany({// Group by the 'path' field
+    where: {
+      shopDomain: session.shop,
+    },
+    take: 10
+  });
+
+  console.log("brokenLinks", JSON.stringify(redirects));
+  return json({
+    redirects,
+    shop: session.shop
+  });
+};
 
 export default function Redirects() {
-  const navigate = useNavigate();
+  const { redirects, shop } = useLoaderData<typeof loader>();
   const [fromPath, setFromPath] = useState("");
   const [toPath, setToPath] = useState("");
-  const [redirects, setRedirects] = useState([]);
+  const [currentRedirects, setRedirects] = useState(redirects);
 
   const handleSubmit = useCallback(async () => {
-    const response = await fetch("/api/redirects", {
+    const response = await fetch("/api/redirects/bulk", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ fromPath, toPath }),
+      body: JSON.stringify({ paths: [fromPath], toPath }),
     });
     
     if (response.ok) {
+      shopify.toast.show("Redirect created successfully");
       setFromPath("");
       setToPath("");
-      loadRedirects();
     }
   }, [fromPath, toPath]);
-
-  const loadRedirects = useCallback(async () => {
-    const response = await fetch("/api/redirects");
-    const data = await response.json();
-    setRedirects(data);
-  }, []);
 
   return (
     <Page 
@@ -128,7 +142,7 @@ export default function Redirects() {
                   </BlockStack>
                 </InlineStack>
 
-                {redirects.length > 0 ? (
+                {currentRedirects.length > 0 ? (
                   <Box paddingBlockStart="400">
                     <DataTable
                       columnContentTypes={['text', 'text', 'text', 'text']}
@@ -138,24 +152,23 @@ export default function Redirects() {
                         'Status',
                         'Created'
                       ]}
-                      rows={redirects.map(r => [
+                      rows={currentRedirects.map(r => [
                         <Box 
                           background="bg-surface-secondary" 
                           padding="200" 
                           borderRadius="150"
                         >
                           <InlineStack gap="200" align="center">
-                            <Icon source={LinkIcon} tone="subdued" />
-                            <Text variant="bodyMd" as="span">{r.from_path}</Text>
+                            {/* <Icon source={LinkIcon} tone="subdued" /> */}
+                            <Text variant="bodyMd" as="span">{r.fromPath}</Text>
                           </InlineStack>
                         </Box>,
                         <InlineStack gap="200" align="center">
-                          <Text variant="bodyMd" as="span">→</Text>
-                          <Text variant="bodyMd" as="span">{r.to_path}</Text>
+                          <Text variant="bodyMd" as="span">{r.toPath}</Text>
                         </InlineStack>,
                         <Badge tone="success">Active</Badge>,
                         <Text variant="bodyMd" as="span">
-                          {new Date(r.created_at).toLocaleDateString()}
+                          {new Date(r.createdAt).toLocaleDateString()}
                         </Text>
                       ])}
                     />

@@ -29,7 +29,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     },
   });
 
-  console.log("brokenLinks", JSON.stringify(brokenLinks));
   return json({
     brokenLinks,
     shop: session.shop
