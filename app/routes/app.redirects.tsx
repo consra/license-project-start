@@ -1,12 +1,13 @@
 import React from "react";
-import { Card, Page, Layout, TextField, Button, DataTable, Text, BlockStack, Box, InlineStack, Badge, Icon } from "@shopify/polaris";
+import { Card, Page, Layout, TextField, Button, DataTable, Text, BlockStack, Box, InlineStack, Badge, Icon, Pagination, TextField as SearchField } from "@shopify/polaris";
 import { useState, useCallback } from "react";
 import { json, useLoaderData, useNavigate } from "@remix-run/react";
 import { 
   ArrowRightIcon, 
   CircleUpIcon,
   LinkIcon,
-  DeleteIcon 
+  DeleteIcon,
+  SearchIcon
 } from "@shopify/polaris-icons";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "app/shopify.server";
@@ -14,27 +15,64 @@ import { prisma } from "../db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
+  const url = new URL(request.url);
+  const page = parseInt(url.searchParams.get("page") || "1");
+  const search = url.searchParams.get("search") || "";
+  const pageSize = 10;
 
-  const redirects = await prisma.redirect.findMany({// Group by the 'path' field
-    where: {
-      shopDomain: session.shop,
-      isWildcard: false,
-    },
-    take: 10
-  });
+  const [redirects, total] = await Promise.all([
+    prisma.redirect.findMany({
+      where: {
+        shopDomain: session.shop,
+        isWildcard: false,
+        OR: [
+          { fromPath: { contains: search, mode: 'insensitive' } },
+          { toPath: { contains: search, mode: 'insensitive' } }
+        ]
+      },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.redirect.count({
+      where: {
+        shopDomain: session.shop,
+        isWildcard: false,
+        OR: [
+          { fromPath: { contains: search, mode: 'insensitive' } },
+          { toPath: { contains: search, mode: 'insensitive' } }
+        ]
+      }
+    })
+  ]);
 
-  console.log("brokenLinks", JSON.stringify(redirects));
   return json({
     redirects,
+    total,
+    page,
+    pageSize,
     shop: session.shop
   });
 };
 
 export default function Redirects() {
-  const { redirects, shop } = useLoaderData<typeof loader>();
+
   const [fromPath, setFromPath] = useState("");
   const [toPath, setToPath] = useState("");
+  const { redirects, total, page, pageSize } = useLoaderData<typeof loader>();
+  const [searchValue, setSearchValue] = useState("");
+  const navigate = useNavigate();
   const [currentRedirects, setRedirects] = useState(redirects);
+
+  const handleSearch = useCallback((value: string) => {
+    setSearchValue(value);
+    navigate(`?search=${value}&page=1`);
+  }, [navigate]);
+
+  const handlePagination = useCallback((newPage: number) => {
+    const searchParam = searchValue ? `&search=${searchValue}` : '';
+    navigate(`?page=${newPage}${searchParam}`);
+  }, [navigate, searchValue]);
 
   const handleSubmit = useCallback(async () => {
     const response = await fetch("/api/redirects/bulk", {
@@ -148,13 +186,18 @@ export default function Redirects() {
               <BlockStack gap="400">
                 <InlineStack align="space-between">
                   <BlockStack gap="100">
-                    <InlineStack gap="300" align="start">
-                      <Text variant="headingMd" as="h2">Active Redirects</Text>
-                    </InlineStack>
+                    <Text variant="headingMd" as="h2">Active Redirects</Text>
                     <Text variant="bodySm" tone="subdued" as="span">
-                      Manage your store's URL redirects
+                      {total} redirects total
                     </Text>
                   </BlockStack>
+                  <SearchField
+                    prefix={<Icon source={SearchIcon} />}
+                    placeholder="Search redirects"
+                    value={searchValue}
+                    onChange={handleSearch}
+                    autoComplete="off"
+                  />
                 </InlineStack>
 
                 {currentRedirects.length > 0 ? (
@@ -215,6 +258,18 @@ export default function Redirects() {
                     </BlockStack>
                   </Box>
                 )}
+
+                <Box paddingBlockStart="400">
+                  <InlineStack align="center" gap="200">
+                    <Pagination
+                      hasPrevious={page > 1}
+                      onPrevious={() => handlePagination(page - 1)}
+                      hasNext={page * pageSize < total}
+                      onNext={() => handlePagination(page + 1)}
+                      label={`Page ${page} of ${Math.ceil(total / pageSize)}`}
+                    />
+                  </InlineStack>
+                </Box>
               </BlockStack>
             </Box>
           </Card>
