@@ -5,7 +5,8 @@ import { json, useLoaderData, useNavigate } from "@remix-run/react";
 import { 
   ArrowRightIcon, 
   CircleUpIcon,
-  LinkIcon 
+  LinkIcon,
+  DeleteIcon 
 } from "@shopify/polaris-icons";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "app/shopify.server";
@@ -17,6 +18,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const redirects = await prisma.redirect.findMany({// Group by the 'path' field
     where: {
       shopDomain: session.shop,
+      isWildcard: false,
     },
     take: 10
   });
@@ -49,6 +51,19 @@ export default function Redirects() {
       setToPath("");
     }
   }, [fromPath, toPath]);
+
+  const handleDelete = useCallback(async (fromPath: string) => {
+    const response = await fetch("/api/redirects/delete", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fromPath }),
+    });
+    
+    if (response.ok) {
+      shopify.toast.show("Redirect deleted");
+      setRedirects(currentRedirects.filter(r => r.fromPath !== fromPath));
+    }
+  }, [currentRedirects]);
 
   return (
     <Page 
@@ -159,7 +174,6 @@ export default function Redirects() {
                           borderRadius="150"
                         >
                           <InlineStack gap="200" align="center">
-                            {/* <Icon source={LinkIcon} tone="subdued" /> */}
                             <Text variant="bodyMd" as="span">{r.fromPath}</Text>
                           </InlineStack>
                         </Box>,
@@ -167,9 +181,19 @@ export default function Redirects() {
                           <Text variant="bodyMd" as="span">{r.toPath}</Text>
                         </InlineStack>,
                         <Badge tone="success">Active</Badge>,
-                        <Text variant="bodyMd" as="span">
-                          {new Date(r.createdAt).toLocaleDateString()}
-                        </Text>
+                        <InlineStack gap="200" align="end">
+                          <Text variant="bodyMd" as="span">
+                            {new Date(r.createdAt).toLocaleDateString()}
+                          </Text>
+                          <Button 
+                            icon={DeleteIcon}
+                            tone="critical"
+                            variant="plain"
+                            onClick={() => handleDelete(r.fromPath)}
+                          >
+
+                          </Button>
+                        </InlineStack>
                       ])}
                     />
                   </Box>

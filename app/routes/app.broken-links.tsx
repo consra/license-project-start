@@ -206,7 +206,6 @@ export default function BrokenLinks() {
                       textAlign="center"
                     >
                       <BlockStack gap="300" align="center">
-                        <Icon source={EyeCheckMarkIcon} tone="success" />
                         <BlockStack gap="200">
                           <Text as="h3" variant="headingSm">
                             No broken links detected
