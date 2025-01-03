@@ -1,0 +1,15 @@
+{% comment %}
+  App Embed Block for 404 Redirect Handler
+{% endcomment %}
+
+{% schema %}
+{
+  "name": "404-redirect",
+  "target": "head",
+  "enabled_on": {
+    "templates": ["404"],
+  },
+  "javascript": "404-redirect.js",
+  "settings": []
+}
+{% endschema %} 

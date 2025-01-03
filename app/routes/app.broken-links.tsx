@@ -9,17 +9,27 @@ import { RefreshIcon, ArrowRightIcon, EyeCheckMarkIcon } from "@shopify/polaris-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
 
-  const brokenLinks = await prisma.notFoundError.findMany({
+  const brokenLinks = await prisma.notFoundError.groupBy({
+    by: ['path'], // Group by the 'path' field
     where: {
       shopDomain: session.shop,
       redirected: false,
     },
     orderBy: {
-      timestamp: 'desc'
+      _count: {
+        path: 'desc',
+      },
     },
-    take: 100
+    take: 10,
+    _count: {
+      path: true, 
+    },
+    _min: {
+      timestamp: true,
+    },
   });
 
+  console.log("brokenLinks", JSON.stringify(brokenLinks));
   return json({
     brokenLinks,
     shop: session.shop
@@ -28,6 +38,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function BrokenLinks() {
   const { brokenLinks, shop } = useLoaderData<typeof loader>();
+  const [currentBrokenLinks, setBrokenLinks] = useState(brokenLinks);
   const [modalActive, setModalActive] = useState(false);
   const [selectedPath, setSelectedPath] = useState("");
   const [redirectPath, setRedirectPath] = useState("");
@@ -47,23 +58,23 @@ export default function BrokenLinks() {
   }, []);
 
   const handleFixRedirect = useCallback(async () => {
-    const response = await fetch("/api/redirects", {
+    const response = await fetch("/api/redirects/bulk", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        fromPath: selectedPath,
+        paths: [selectedPath],
         toPath: redirectPath,
       }),
     });
 
     if (response.ok) {
       handleModalClose();
-      // Optionally refresh the page or update the list
-      window.location.reload();
+      shopify.toast.show("Redirect created successfully");
+      setBrokenLinks(currentBrokenLinks.filter(link => link.path !== selectedPath));
     }
-  }, [selectedPath, redirectPath]);
+  }, [selectedPath, redirectPath, currentBrokenLinks]);
 
   const handleBulkRedirect = useCallback(async () => {
     const response = await fetch("/api/redirects/bulk", {
@@ -72,7 +83,7 @@ export default function BrokenLinks() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        paths: brokenLinks.map(link => link.path),
+        paths: currentBrokenLinks.map(link => link.path),
         toPath: bulkRedirectPath,
       }),
     });
@@ -80,13 +91,17 @@ export default function BrokenLinks() {
     if (response.ok) {
       setBulkModalActive(false);
       setBulkRedirectPath("");
-      window.location.reload();
+      shopify.toast.show("Redirects created successfully");
+      setBrokenLinks(currentBrokenLinks.filter(link => !currentBrokenLinks.includes(link)));
     }
-  }, [brokenLinks, bulkRedirectPath]);
+  }, [currentBrokenLinks, bulkRedirectPath]);
 
-  const rows = brokenLinks.map((link) => [
+  const rows = currentBrokenLinks.map((link) => [
     link.path,
-    new Date(link.timestamp).toLocaleString(),
+    link._min.timestamp ? new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(new Date(link._min.timestamp)) : 'N/A',
     1,
     <Button onClick={() => handleModalOpen(link.path)}>Fix</Button>
   ]);
@@ -94,7 +109,7 @@ export default function BrokenLinks() {
   return (
     <Page 
       title="New Broken Links"
-      subtitle="View and fix recent 404 errors by creating redirects for broken links."
+      subtitle="View and fix the most common 404 paths by creating redirects for broken links."
     >
       <BlockStack gap="500">
         <Banner tone="warning">
@@ -126,7 +141,7 @@ export default function BrokenLinks() {
                       >
                         Refresh
                       </Button>
-                      {brokenLinks.length > 0 && (
+                      {currentBrokenLinks.length > 0 && (
                         <Button 
                           onClick={() => setBulkModalActive(true)}
                           tone="success"
@@ -147,7 +162,7 @@ export default function BrokenLinks() {
                           'Occurrences',
                           'Action'
                         ]}
-                        rows={brokenLinks.map((link) => [
+                        rows={currentBrokenLinks.map((link) => [
                           <InlineStack wrap={false}>
                             <Box 
                               background="bg-surface-secondary" 
@@ -161,14 +176,14 @@ export default function BrokenLinks() {
                             </Box>
                           </InlineStack>,
                           <Text variant="bodyMd" as="span">
-                            {new Intl.DateTimeFormat('en-US', {
+                            {link._min.timestamp ? new Intl.DateTimeFormat('en-US', {
                               dateStyle: 'medium',
                               timeStyle: 'short'
-                            }).format(new Date(link.timestamp))}
+                            }).format(new Date(link._min.timestamp)) : 'N/A'}
                           </Text>,
                           <Text variant="bodyMd" as="span" alignment="end">
                             <Badge tone="info" progress="complete">
-                              {link.count || 1}
+                              {String(link?._count?.path || 1)}
                             </Badge>
                           </Text>,
                           <InlineStack align="start">
@@ -272,7 +287,7 @@ export default function BrokenLinks() {
         <Modal.Section>
           <BlockStack gap="400">
             <Text as="p" variant="bodyMd">
-              This will redirect all {brokenLinks.length} broken links to the same destination.
+              This will redirect all {currentBrokenLinks.length} broken links to the same destination.
             </Text>
             <TextField
               label="Redirect To"

@@ -1,20 +1,11 @@
-name = "seo-wizzard-extension"
-type = "theme"
-extension_points = [
-  "web.templates.404",
-  "web.error.render"
-]
-[[metafields]]
-namespace = "redirect_settings"
-key = "default_redirect"
-type = "single_line_text_field"
-description = "Default URL to redirect to when a page is not found"
+type = "theme_app_extension"
+name = "SEO Wizard Extension"
 
-[settings]
-[[settings.fields]]
-key = "enable_logging"
-type = "boolean"
-name = "Enable 404 Logging"
-description = "Log 404 errors for analytics"
-default = true
+extension_points = [
+  "web.app_embed"
+]
+
+[[metafields]]
+namespace = "seo-wizard"
+key = "settings"
 

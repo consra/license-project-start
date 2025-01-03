@@ -18,8 +18,7 @@ import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import React, { useState, useCallback } from "react";
-import { RefreshIcon, InfoIcon } from "@shopify/polaris-icons";
-import { Icon } from '@shopify/polaris';
+import { RefreshIcon } from "@shopify/polaris-icons";
 
 type Theme = {
   id: string;
@@ -67,8 +66,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return json({
     shop: session.shop,
     themes,
-    extensionId: process.env.EXTENSION_ID || "404-redirect",
-    extensionFileName: process.env.EXTENSION_FILE_NAME || "seo-wizzard-extension"
+    extensionId: process.env.SHOPIFY_SEO_WIZARD_EXTENSION_ID || "0986e27a-90bf-4af8-8c79-9312c6e46f3a",
+    extensionFileName: process.env.SHOPIFY_SEO_WIZARD_EXTENSION_FILE_NAME || "404-redirect"
   });
 };
 
@@ -81,43 +80,10 @@ export default function Index() {
     plural: 'themes',
   };
 
-  const { selectedResources, allResourcesSelected, handleSelectionChange } =
-    useIndexResourceState(themes);
-
   const getThemeEditorUrl = (themeId: string) => {
-    return `https://${shop}/admin/themes/${themeId}/editor?context=apps&activateAppId=${extensionId}/${extensionFileName}`;
+    const id = themeId.replace("gid://shopify/OnlineStoreTheme/", "");
+    return `https://${shop}/admin/themes/${id}/editor?context=apps&activateAppId=${extensionId}/${extensionFileName}`;
   };
-
-  const rowMarkup = themes.map(
-    (theme, index) => (
-      <IndexTable.Row
-        id={theme.id}
-        key={theme.id}
-        position={index}
-      >
-        <IndexTable.Cell>
-          <Badge tone={theme.isActive ? "success" : "critical"}>
-            {theme.isActive ? "Active" : "Inactive"}
-          </Badge>
-        </IndexTable.Cell>
-        <IndexTable.Cell>
-          <Text variant="bodyMd" fontWeight="bold" as="span">
-            {theme.name} {theme.role === "main" && "(Live)"}
-          </Text>
-        </IndexTable.Cell>
-        <IndexTable.Cell>
-          <ButtonGroup>
-            <Button
-              onClick={() => window.open(getThemeEditorUrl(theme.id), '_blank')}
-              tone={theme.isActive ? "critical" : "success"}
-            >
-              {theme.isActive ? "Deactivate" : "Configure"}
-            </Button>
-          </ButtonGroup>
-        </IndexTable.Cell>
-      </IndexTable.Row>
-    ),
-  );
 
   const handleDeactivate = useCallback(async (theme: Theme) => {
     const response = await fetch("/api/theme-status", {
