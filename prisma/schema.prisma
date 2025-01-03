@@ -26,8 +26,8 @@ model Redirect {
   createdAt   DateTime  @default(now()) @db.Timestamp @map("created_at")
   updatedAt   DateTime  @updatedAt @db.Timestamp @map("updated_at")
 
-  @@unique([shopDomain, fromPath])
-  @@index([shopDomain, fromPath])
+  @@unique([shopDomain, fromPath, pattern])
+  @@index([shopDomain, fromPath, pattern])
   @@map("redirects")
 }
 

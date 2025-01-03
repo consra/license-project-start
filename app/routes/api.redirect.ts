@@ -21,44 +21,38 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   try {
-    // Log the 404 first
-    await prisma.notFoundError.create({
-      data: {
-        shopDomain,
-        path,
-        userAgent: userAgent || undefined,
-        referer: referer || undefined,
-        redirected: false
-      }
-    });
-
-    // Check exact matches
     let redirect = await prisma.redirect.findFirst({
-      where: {
-        shopDomain,
-        fromPath: path,
-        isActive: true,
-        isWildcard: false,
-      },
-    });
-
-    // If no exact match, check wildcard patterns
-    if (!redirect) {
-      const wildcardRedirects = await prisma.redirect.findMany({
         where: {
           shopDomain,
+          fromPath: path,
           isActive: true,
-          isWildcard: true,
+          isWildcard: false,
         },
       });
 
-      for (const wildcardRedirect of wildcardRedirects) {
-        const pattern = wildcardRedirect.pattern?.replace('*', '.*');
+    if (redirect) {
+      return json({ redirect: true, redirectUrl: redirect.toPath, status: 301 });
+    }
+
+    const wildcardRedirects = await prisma.redirect.findMany({
+        where: {
+            shopDomain,
+            isActive: true,
+            isWildcard: true,
+        },
+    });
+
+    for (const wildcardRedirect of wildcardRedirects) {
+        const pattern = wildcardRedirect.pattern?.replace('*', '(.*)');
         if (pattern && new RegExp(pattern).test(path)) {
-          redirect = wildcardRedirect;
-          break;
+            // Extract the dynamic part and substitute it in the toPath
+            const match = path.match(new RegExp(pattern));
+            console.log("match", match);
+            const dynamicPart = match?.[1] || '';
+            const redirectUrl = wildcardRedirect.toPath.replace('*', dynamicPart);
+            redirect = { ...wildcardRedirect, toPath: redirectUrl };
+            break;
         }
-      }
     }
 
     if (redirect) {
@@ -81,6 +75,17 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         status: 301
       });
     }
+
+        // Log the 404 first
+    await prisma.notFoundError.create({
+        data: {
+            shopDomain,
+            path,
+            userAgent: userAgent || undefined,
+            referer: referer || undefined,
+            redirected: false
+        }
+    });
 
     return json({ redirect: false });
   } catch (error) {

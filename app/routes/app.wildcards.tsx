@@ -1,6 +1,6 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import { Card, Page, Layout, TextField, Button, DataTable, Banner, Text, BlockStack, Box, InlineStack, Icon } from "@shopify/polaris";
+import { useLoaderData, useNavigate } from "@remix-run/react";
+import { Card, Page, Layout, TextField, Button, DataTable, Banner, Text, BlockStack, Box, InlineStack, Icon, Divider } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
 import { useState, useCallback } from "react";
@@ -15,7 +15,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       shopDomain: session.shop,
       isWildcard: true,
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
+    take: 5
   });
 
   return json({ wildcards, shop: session.shop });
@@ -25,7 +26,9 @@ export default function Wildcards() {
   const { wildcards } = useLoaderData<typeof loader>();
   const [pattern, setPattern] = useState("");
   const [toPath, setToPath] = useState("");
+  const [currentWildcards, setCurrentWildcards] = useState(wildcards);
 
+  const navigate = useNavigate();
   const handleSubmit = useCallback(async () => {
     const response = await fetch("/api/redirects/wildcard", {
       method: "POST",
@@ -40,8 +43,9 @@ export default function Wildcards() {
     if (response.ok) {
       setPattern("");
       setToPath("");
-      // Refresh the list
-      window.location.reload();
+      setCurrentWildcards([...currentWildcards, { pattern, toPath, status: "active", createdAt: new Date() }]);
+      navigate(`/app/wildcards`);
+      shopify.toast.show("Wildcard redirect created");
     }
   }, [pattern, toPath]);
 
@@ -53,7 +57,8 @@ export default function Wildcards() {
     });
 
     if (response.ok) {
-      window.location.reload();
+      shopify.toast.show("Wildcard redirect deleted");
+      navigate(`/app/wildcards`);
     }
   }, []);
 
@@ -76,22 +81,49 @@ export default function Wildcards() {
                 <Text variant="headingMd" as="h2">How Wildcards Work</Text>
               </InlineStack>
               <BlockStack gap="100">
-                <Text as="h2">Create flexible redirect rules using wildcards (*)</Text>
+                <Text as="h2">Create flexible redirect rules using wildcards (*). Examples:</Text>
+                <BlockStack gap="200" align="start">
                 <Box
                   background="bg-surface-active"
                   padding="200"
                   borderRadius="200"
                 >
-                  <InlineStack gap="100" align="start">
-                    <Text variant="bodyMd" as="span" fontWeight="bold">/old-blog/*</Text>
-                    <Text variant="bodyMd" tone="success" as="span">→</Text>
-                    <Text variant="bodyMd" as="span" fontWeight="bold">/blog/*</Text>
-                  </InlineStack>
-                </Box>
-                <Text tone="subdued" as="dd">
+                    <InlineStack gap="100" align="start">
+                      <Text variant="bodyMd" as="span" fontWeight="bold">/old-blog/*</Text>
+                      <Text variant="bodyMd" tone="success" as="span">→</Text>
+                      <Text variant="bodyMd" as="span" fontWeight="bold">/blog/*</Text>
+                    </InlineStack>
+                 </Box>
+                 <Text tone="subdued" as="dd">
                   This will redirect all URLs starting with /old-blog/ to /blog/ while preserving the rest of the path
+                 </Text>
+                <Divider/>
+                <Box
+                background="bg-surface-active"
+                padding="200"
+                borderRadius="200"
+                  >
+                  <InlineStack gap="100" align="start">
+                    <Text variant="bodyMd" as="span" fontWeight="bold">/*/gif-card</Text>
+                    <Text variant="bodyMd" tone="success" as="span">→</Text>
+                    <Text variant="bodyMd" as="span" fontWeight="bold">/*/gift-card</Text>
+                    <Text variant="bodyMd" tone="success" as="span">OR</Text>
+                    <Text variant="bodyMd" as="span" fontWeight="bold">/*/gift-card</Text>
+                    <Text variant="bodyMd" tone="success" as="span">→</Text>
+                    <Text variant="bodyMd" as="span" fontWeight="bold">/products/gift-card</Text>
+                  </InlineStack>
+
+                </Box>
+              </BlockStack>
+                <Text tone="subdued" as="dd">
+                  This will redirect all URLs starting with like /old-products/gift-card to /products/gift-card while preserving the rest of the path
                 </Text>
               </BlockStack>
+
+              <Divider/>
+
+              
+
             </BlockStack>
           </Box>
         </Layout.Section>
@@ -146,7 +178,7 @@ export default function Wildcards() {
                           label={
                             <InlineStack gap="100" align="center">
                               <Icon source={LinkIcon} tone="success" />
-                              <Text as="span">Redirect To</Text>
+                              <Text as="span">Redirect To (* is not mandatory)</Text>
                             </InlineStack>
                           }
                           value={toPath}
@@ -162,7 +194,7 @@ export default function Wildcards() {
                       <Button 
                         tone="success"
                         onClick={handleSubmit}
-                        disabled={!pattern || !toPath}
+                        disabled={!pattern || !toPath || wildcards.length >= 5}
                         icon={CircleUpIcon}
                         size="slim"  
                       >
@@ -184,7 +216,7 @@ export default function Wildcards() {
                   <BlockStack>
                     <Text variant="headingMd" as="h2">Active Wildcard Redirects</Text>
                     <Text variant="bodySm" tone="subdued" as="span">
-                      Manage your store's wildcard URL redirects
+                      Manage your store's wildcard URL redirects. Max 5 active wildcard redirects allowd.
                     </Text>
                   </BlockStack>
                 </InlineStack>

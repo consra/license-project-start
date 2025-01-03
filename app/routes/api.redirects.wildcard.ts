@@ -4,6 +4,17 @@ import { prisma } from "../db.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
+  if (request.method === "DELETE") {
+    const { pattern } = await request.json();
+    await prisma.redirect.deleteMany({
+      where: { 
+        shopDomain: session.shop,
+        pattern 
+      } 
+    });
+    return json({ message: "Redirect deleted" }, { status: 200 });
+  }
+
   
   if (request.method !== "POST") {
     return json({ error: "Method not allowed" }, { status: 405 });
@@ -15,7 +26,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const redirect = await prisma.redirect.create({
       data: {
         shopDomain: session.shop,
-        fromPath: pattern, // Store original pattern in fromPath
+        fromPath: pattern,
         toPath,
         pattern,
         isWildcard: true,

@@ -59,22 +59,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       startDate.setDate(now.getDate() - 7);
   }
 
-  const [errors, topPaths, totalRedirects, unfixedErrors, topReferrers] = await Promise.all([
+  const [dailyErrors, topPaths, totalRedirects, unfixedErrors, topReferrers] = await Promise.all([
     // 404 Errors over time
-    prisma.notFoundError.groupBy({
-      by: ['timestamp'],
-      where: {
-        shopDomain: session.shop,
-        timestamp: {
-          gte: startDate,
-          lte: now,
-        },
-      },
-      _count: true,
-      orderBy: {
-        timestamp: 'asc',
-      },
-    }),
+    prisma.$queryRaw`
+      SELECT DATE_TRUNC('day', "timestamp") AS day, COUNT(*)::integer AS count
+      FROM not_found_errors
+      WHERE "shop_domain" = ${session.shop}
+        AND "timestamp" BETWEEN ${startDate} AND ${now}
+      GROUP BY day
+      ORDER BY day ASC;
+    `,
 
     // Top Paths
     prisma.notFoundError.groupBy({
@@ -117,7 +111,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
     // Top Referrers in period
     prisma.notFoundError.groupBy({
-      by: ['referer'],
+      by: ['userAgent'],
       where: { 
         shopDomain: session.shop,
         timestamp: {
@@ -127,18 +121,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       _count: true,
       orderBy: [
         {
-          referer: 'desc'
+          userAgent: 'desc'
         }
       ],
       take: 3
     })
   ]);
 
-  const totalErrors = errors.reduce((sum, error) => sum + error._count, 0);
+  const totalErrors = dailyErrors.reduce((sum, error) => sum + error.count, 0);
   const avgDaily = Math.round(totalErrors / (range === 'day' ? 1 : range === 'week' ? 7 : 30));
 
   return json({
-    errors,
+    dailyErrors,
     topPaths,
     range,
     additionalMetrics: {
@@ -152,7 +146,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function Analytics() {
-  const { errors, topPaths, range, additionalMetrics } = useLoaderData<typeof loader>();
+  const { dailyErrors, topPaths, range, additionalMetrics } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [selectedRange, setSelectedRange] = useState(range);
 
@@ -162,13 +156,13 @@ export default function Analytics() {
   }, [navigate]);
 
   const lineChartData = {
-    labels: errors.map(error => 
-      new Date(error.timestamp).toLocaleDateString()
+    labels: dailyErrors.map(error => 
+      new Date(error.day).toLocaleDateString()
     ),
     datasets: [
       {
         label: '404 Errors',
-        data: errors.map(error => error._count),
+        data: dailyErrors.map(error => error.count),
         borderColor: 'rgb(75, 192, 192)',
         tension: 0.1,
       },
@@ -233,7 +227,7 @@ export default function Analytics() {
                         textAlign: 'center'
                       }}>
                         <Text variant="heading2xl" as="p" fontWeight="bold">
-                          {additionalMetrics.totalErrors}
+                          {additionalMetrics?.totalErrors || 0}
                         </Text>
                       </div>
                       <Text variant="bodySm" tone="subdued">
@@ -282,11 +276,11 @@ export default function Analytics() {
                     borderColor="border-warning"
                   >
                     <BlockStack gap="300">
-                      <Text variant="headingSm" as="h3" alignment="center">Top Sources</Text>
+                      <Text variant="headingSm" as="h3" alignment="center">Top User</Text>
                       <BlockStack gap="200">
                         {additionalMetrics.topReferrers.map((ref, index) => (
                           <Box
-                            key={ref.referer || 'direct'}
+                            key={ref.userAgent || 'direct'}
                             background="bg-surface"
                             padding="300"
                             borderRadius="200"
@@ -294,7 +288,7 @@ export default function Analytics() {
                           >
                             <InlineStack align="space-between">
                               <Text variant="bodyMd" fontWeight="medium">
-                                {ref.referer || 'Direct'}
+                                {ref.userAgent?.split(' ')[0].slice(0, 20) || 'Direct'}
                               </Text>
                               <Text variant="bodyMd" tone="subdued">
                                 {ref._count}
