@@ -50,7 +50,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     // Send notification email to support team
     await sendNotificationEmail({
-      email: "support@your-domain.com",
+      email: "seowizzard.storesense@gmail.com",
       shopDomain: session.shop,
       subject: "New Support Ticket",
       htmlContent: `

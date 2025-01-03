@@ -17,30 +17,25 @@ export async function sendNotificationEmail({
   topErrors,
   period
 }: NotificationData) {
-  const subject = `404 Error Report for ${shopDomain} - ${period}`;
+  const subject = `New404 Errors detected for ${shopDomain}`;
   
   const htmlContent = `
-    <h2>404 Error Report for ${shopDomain}</h2>
-    <p>Period: ${period}</p>
-    <p>Total new 404 errors: ${errorCount}</p>
-    
-    <h3>Top Error Pages:</h3>
-    <ul>
-      ${topErrors.map(error => `
-        <li>${error.path}: ${error.count} times</li>
-      `).join('')}
-    </ul>
-    
+    <h2>New 404 errors detected</h2>
+
+    <p> Hello, he is Seo Wizard</p>
+    <p> We have detected new 404 errors on your store. Please check the report below to see the details.</p>
+    <p> Please login to your store to see the report in the analytics section.</p>
+
     <p>
-      <a href="https://${shopDomain}/admin/apps/seo-wizzard/analytics">
-        View Full Report
-      </a>
+      Best regards,
+      <br>
+      SEO Wizard
     </p>
   `;
 
   try {
     await resend.emails.send({
-      from: 'SEO Wizard <notifications@your-domain.com>',
+      from: 'SEO Wizard <no-reply@seo-wizzard.org>',
       to: email,
       subject,
       html: htmlContent,

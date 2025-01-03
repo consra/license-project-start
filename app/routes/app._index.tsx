@@ -30,6 +30,45 @@ type Theme = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
 
+  const handleIsActive = async (theme: any) => {
+    const id = theme.id.replace("gid://shopify/OnlineStoreTheme/", "");
+    const response = await admin.rest.get({
+      path: `themes/${id}/assets`,
+      query: {
+        asset: {
+          key: 'config/settings_data.json'
+        }
+      }
+    });
+
+    const data = await response.json();
+    const themeCode = data.asset.value;
+    if (!themeCode) {
+      return false;
+    }
+
+    let parsed = undefined;
+    try {
+      parsed = JSON.parse(themeCode);
+    } catch (error) {
+      return false;
+    }
+
+    if (!parsed.current.blocks) {
+      return false;
+    }
+    let isActive = false;
+    console.log("theme id", theme.id);
+    Object.entries(parsed.current.blocks).forEach(([key, value]) => {
+      if (value?.type?.includes("seo-wizzard") && value?.disabled === false) {
+        isActive = true;
+      }
+    });
+
+    console.log("isActive", isActive);
+    return isActive;
+  };
+
   // Fetch themes from Shopify Admin API
   const response = await admin.graphql(
     `#graphql
@@ -45,23 +84,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   );
 
   const data = await response.json();
-  
-  // Get activation status for all themes
-  const themeStatuses = await prisma.themeStatus.findMany({
-    where: {
-      shopDomain: session.shop,
-    },
-  });
 
-  // Create a map for quick lookup
-  const statusMap = new Map(
-    themeStatuses.map(status => [status.themeId, status.isActive])
-  );
 
-  const themes = data.data.themes.nodes.map((theme: any) => ({
+  const themes = await Promise.all(data.data.themes.nodes.map(async (theme: any) => ({
     ...theme,
-    isActive: statusMap.get(theme.id) || false,
-  }));
+    isActive: await handleIsActive(theme)
+  })));
 
   return json({
     shop: session.shop,
@@ -277,3 +305,7 @@ export default function Index() {
     </Page>
   );
 }
+function async() {
+  throw new Error("Function not implemented.");
+}
+

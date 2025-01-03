@@ -36,6 +36,44 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return json({ settings, redirectCount, shop: session.shop });
 };
 
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
+  const formData = await request.formData();
+  
+  const email = formData.get("email") as string;
+  const frequency = formData.get("frequency") as string;
+  const enabled = formData.get("enabled") === "true";
+
+  try {
+    await prisma.notificationSettings.upsert({
+      where: {
+        shopDomain_email: {
+          shopDomain: session.shop,
+          email: email
+        }
+      },
+      update: {
+        frequency,
+        enabled,
+      },
+      create: {
+        shopDomain: session.shop,
+        email,
+        frequency,
+        enabled,
+      }
+    });
+
+    return json({ success: true });
+  } catch (error) {
+    console.error("Failed to save settings:", error);
+    return json(
+      { error: "Failed to save notification settings" }, 
+      { status: 500 }
+    );
+  }
+};
+
 export default function Settings() {
   const { settings, redirectCount } = useLoaderData<typeof loader>();
   const submit = useSubmit();
@@ -139,8 +177,15 @@ export default function Settings() {
                         </Badge>
                       </InlineStack>
                       <Button 
-                        disabled={!email || !enabled}
-                        onClick={() => setEnabled(!enabled)}
+                        disabled={!email}
+                        onClick={() => {
+                          const formData = new FormData();
+                          formData.append("email", email);
+                          formData.append("frequency", frequency);
+                          formData.append("enabled", (!enabled).toString());
+                          submit(formData, { method: "post" });
+                          setEnabled(!enabled);
+                        }}
                         tone={enabled ? "critical" : "success"}
                         fullWidth
                       >

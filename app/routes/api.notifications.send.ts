@@ -7,12 +7,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return json({ error: "Method not allowed" }, { status: 405 });
   }
 
-  // Verify cron secret
-  const authHeader = request.headers.get("Authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     // Get all active notification settings
     const settings = await prisma.notificationSettings.findMany({

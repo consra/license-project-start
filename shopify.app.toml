@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "8d735ce17d5961291e4e000dd6ad3ff7"
-application_url = "https://combinations-easier-scope-bottle.trycloudflare.com"
+application_url = "https://julian-summaries-florist-reproduction.trycloudflare.com"
 embedded = true
 name = "seo-wizzard"
 handle = "seo-wizzard-7"
@@ -23,13 +23,13 @@ scopes = "read_themes"
 
 [auth]
 redirect_urls = [
-  "https://combinations-easier-scope-bottle.trycloudflare.com/auth/callback",
-  "https://combinations-easier-scope-bottle.trycloudflare.com/auth/shopify/callback",
-  "https://combinations-easier-scope-bottle.trycloudflare.com/api/auth/callback"
+  "https://julian-summaries-florist-reproduction.trycloudflare.com/auth/callback",
+  "https://julian-summaries-florist-reproduction.trycloudflare.com/auth/shopify/callback",
+  "https://julian-summaries-florist-reproduction.trycloudflare.com/api/auth/callback"
 ]
 
 [app_proxy]
-url = "https://combinations-easier-scope-bottle.trycloudflare.com"
+url = "https://julian-summaries-florist-reproduction.trycloudflare.com"
 subpath = "404-redirect"
 prefix = "apps"
 
