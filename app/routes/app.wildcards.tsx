@@ -76,9 +76,80 @@ export default function Wildcards() {
         <Layout>
           <Layout.Section>
             <Card>
-              <Box padding="500">
-                <BlockStack gap="500">
-                  {/* Feature Preview */}
+              <Box padding="600">
+                <BlockStack gap="600">
+                  {/* Hero Section */}
+                  <Box
+                    background="bg-surface-info-subdued"
+                    borderRadius="300"
+                    padding="600"
+                    borderWidth="025"
+                    borderColor="border-info"
+                  >
+                    <BlockStack gap="400" align="center">
+                      <div style={{ 
+                        backgroundColor: 'var(--p-color-bg-info)',
+                        padding: '20px',
+                        borderRadius: '50%',
+                        display: 'inline-flex',
+                        boxShadow: 'var(--p-shadow-200)'
+                      }}>
+                        <Icon source={LinkIcon} tone="info" size="large" />
+                      </div>
+                      <BlockStack gap="200" align="center">
+                        <Text variant="headingLg" as="h2">Unlock Wildcard Redirects</Text>
+                        <Text variant="bodyMd" as="p" alignment="center">
+                          Upgrade to Premium to create powerful redirect rules with wildcards
+                        </Text>
+                      </BlockStack>
+                    </BlockStack>
+                  </Box>
+
+                  {/* Features Grid */}
+                  <BlockStack gap="400">
+                    <Text variant="headingMd" as="h3" alignment="center">Premium Features</Text>
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                      gap: '16px' 
+                    }}>
+                      {[
+                        {
+                          icon: "✨",
+                          title: "Wildcard Patterns",
+                          description: "Create flexible redirect rules using * wildcards"
+                        },
+                        {
+                          icon: "📊",
+                          title: "Advanced Analytics",
+                          description: "Track and analyze redirect performance"
+                        },
+                        {
+                          icon: "🚀",
+                          title: "Priority Support",
+                          description: "Get help when you need it"
+                        }
+                      ].map(feature => (
+                        <Box
+                          key={feature.title}
+                          background="bg-surface-secondary"
+                          padding="400"
+                          borderRadius="200"
+                        >
+                          <BlockStack gap="300">
+                            <Text variant="headingMd" as="h4">
+                              {feature.icon} {feature.title}
+                            </Text>
+                            <Text variant="bodyMd" tone="subdued">
+                              {feature.description}
+                            </Text>
+                          </BlockStack>
+                        </Box>
+                      ))}
+                    </div>
+                  </BlockStack>
+
+                  {/* Example Section */}
                   <Box
                     background="bg-surface-secondary"
                     borderRadius="300"
@@ -87,76 +158,32 @@ export default function Wildcards() {
                     borderColor="border-subdued"
                   >
                     <BlockStack gap="400">
-                      <InlineStack gap="400" blockAlign="center">
-                        <div style={{ 
-                          backgroundColor: 'var(--p-color-bg-info-subdued)',
-                          padding: '16px',
-                          borderRadius: '12px',
-                          boxShadow: 'var(--p-shadow-100)'
-                        }}>
-                          <Icon source={LinkIcon} tone="info" />
-                        </div>
-                        <BlockStack gap="100">
-                          <Text variant="headingMd" as="h2">Wildcard Redirects</Text>
-                          <Text variant="bodySm" tone="subdued">Create powerful redirect rules with wildcards</Text>
-                        </BlockStack>
+                      <Text variant="headingMd" as="h3">Example Wildcard Rules</Text>
+                      <InlineStack wrap={false} gap="300">
+                        <Box padding="300" background="bg-surface" borderRadius="200" shadow="100">
+                          <Text variant="bodyMd" as="span">/old-blog/* → /blog/*</Text>
+                        </Box>
+                        <Box padding="300" background="bg-surface" borderRadius="200" shadow="100">
+                          <Text variant="bodyMd" as="span">/*/gift-car → /*/gift-card</Text>
+                        </Box>
                       </InlineStack>
-
-                      <Box
-                        background="bg-surface"
-                        padding="400"
-                        borderRadius="200"
-                        shadow="100"
-                      >
-                        <BlockStack gap="400">
-                          <Text variant="headingSm" as="h3">Premium Features:</Text>
-                          <InlineStack wrap={false} gap="500">
-                            {[
-                              "Wildcard pattern matching",
-                              "Dynamic path redirects",
-                              "Bulk URL handling",
-                              "Advanced analytics",
-                              "Priority support"
-                            ].map(feature => (
-                              <Box
-                                key={feature}
-                                background="bg-surface-active"
-                                padding="300"
-                                borderRadius="200"
-                              >
-                                <InlineStack gap="200" align="center">
-                                  <div style={{ color: 'var(--p-color-text-info)' }}>✓</div>
-                                  <Text variant="bodyMd" as="span">{feature}</Text>
-                                </InlineStack>
-                              </Box>
-                            ))}
-                          </InlineStack>
-                        </BlockStack>
-                      </Box>
                     </BlockStack>
                   </Box>
 
-                  {/* Upgrade CTA */}
-                  <Box
-                    background="bg-surface-info-subdued"
-                    borderRadius="300"
-                    padding="500"
-                    borderWidth="025"
-                    borderColor="border-info"
-                  >
-                    <BlockStack gap="400" align="center">
-                      <Text variant="headingMd" as="h2">Upgrade to Premium</Text>
-                      <Text as="p" alignment="center">
-                        Get access to wildcard redirects and more premium features for just $2.99/month
-                      </Text>
+                  {/* CTA */}
+                  <Box padding="500" alignment="center">
+                    <BlockStack gap="300" align="center">
                       <Button
                         variant="primary"
                         tone="success"
                         url="/app/billing"
                         size="large"
                       >
-                        Upgrade Now
+                        Upgrade to Premium - $2.99/month
                       </Button>
+                      <Text variant="bodySm" tone="subdued">
+                        Includes 7-day free trial. Cancel anytime.
+                      </Text>
                     </BlockStack>
                   </Box>
                 </BlockStack>
