@@ -9,11 +9,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const userAgent = request.headers.get("X-User-Agent");
   const referer = request.headers.get("X-Referrer");
 
-  console.log("path", path);
-  console.log("shopDomain", shopDomain);
-  console.log("userAgent", userAgent);
-  console.log("referer", referer);
-
   //list all headers
   console.log("headers", request.headers.keys());
   if (!path || !shopDomain) {
@@ -31,7 +26,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       });
 
     if (redirect) {
-      return json({ redirect: true, redirectUrl: redirect.toPath, status: 301 });
+      return json({ redirect: true, redirectUrl: redirect.toPath });
     }
 
     const wildcardRedirects = await prisma.redirect.findMany({
