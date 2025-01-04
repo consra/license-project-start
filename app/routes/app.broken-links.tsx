@@ -7,7 +7,14 @@ import React, { useState, useCallback } from "react";
 import { RefreshIcon, ArrowRightIcon, EyeCheckMarkIcon } from "@shopify/polaris-icons";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
+
+  const billingCheck = await billing.check({
+    plans: ["Premium"],
+    isTest: process.env.NODE_ENV !== 'production',
+  });
+
+  const isPremium = billingCheck?.hasActivePayment;
 
   const brokenLinks = await prisma.notFoundError.groupBy({
     by: ['path'], // Group by the 'path' field
@@ -31,12 +38,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return json({
     brokenLinks,
+    isPremium,
     shop: session.shop
   });
 };
 
 export default function BrokenLinks() {
-  const { brokenLinks, shop } = useLoaderData<typeof loader>();
+  const { brokenLinks, isPremium, shop } = useLoaderData<typeof loader>();
   const [currentBrokenLinks, setBrokenLinks] = useState(brokenLinks);
   const [modalActive, setModalActive] = useState(false);
   const [selectedPath, setSelectedPath] = useState("");
@@ -140,7 +148,7 @@ export default function BrokenLinks() {
                       >
                         Refresh
                       </Button>
-                      {currentBrokenLinks.length > 0 && (
+                      {currentBrokenLinks.length > 0 && isPremium && (
                         <Button 
                           onClick={() => setBulkModalActive(true)}
                           tone="success"

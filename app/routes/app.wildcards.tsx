@@ -182,7 +182,7 @@ export default function Wildcards() {
                         Upgrade to Premium - $2.99/month
                       </Button>
                       <Text variant="bodySm" tone="subdued">
-                        Includes 7-day free trial. Cancel anytime.
+                        Includes 3-day free trial. Cancel anytime.
                       </Text>
                     </BlockStack>
                   </Box>

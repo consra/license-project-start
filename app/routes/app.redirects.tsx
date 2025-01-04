@@ -13,11 +13,18 @@ import { authenticate } from "app/shopify.server";
 import { prisma } from "../db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
   const url = new URL(request.url);
   const page = parseInt(url.searchParams.get("page") || "1");
   const search = url.searchParams.get("search") || "";
   const pageSize = 10;
+
+  const billingCheck = await billing.check({
+    plans: ["Premium"],
+    isTest: process.env.NODE_ENV !== 'production',
+  });
+
+  const isPremium = billingCheck?.hasActivePayment;
 
   const [redirects, total] = await Promise.all([
     prisma.redirect.findMany({
@@ -47,6 +54,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return json({
     redirects,
+    isPremium,
     total,
     page,
     pageSize,
@@ -57,7 +65,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function Redirects() {
   const [fromPath, setFromPath] = useState("");
   const [toPath, setToPath] = useState("");
-  const { redirects, total, page, pageSize } = useLoaderData<typeof loader>();
+  const { redirects, isPremium, total, page, pageSize } = useLoaderData<typeof loader>();
   console.log("redirects", JSON.stringify(redirects));
   const [searchValue, setSearchValue] = useState("");
   const navigate = useNavigate();
@@ -171,7 +179,7 @@ export default function Redirects() {
                     <Button 
                       tone="success"
                       onClick={handleSubmit}
-                      disabled={!fromPath || !toPath}
+                      disabled={!fromPath || !toPath || (!isPremium && currentRedirects?.length >= 100)}
                       icon={CircleUpIcon}
                       size="slim"
                     >

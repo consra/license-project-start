@@ -23,7 +23,7 @@ const PREMIUM_PLAN = {
   amount: 2.99,
   currencyCode: "USD",
   interval: "EVERY_30_DAYS" as const,
-  trialDays: 7
+  trialDays: 3
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -118,13 +118,13 @@ export default function Billing() {
         "404 error tracking",
         "Simple redirects",
         "Weekly or monthly email reports",
-        "Up to 100 redirects",
-        "Bulk operations"
+        "Up to 100 redirects"
       ],
       limitations: [
         "No wildcard redirects",
         "No analytics",
-        "Basic support only",
+        "No bulk redirects",
+        "Basic support only"
       ]
     },
     {
@@ -132,6 +132,7 @@ export default function Billing() {
       price: "2.99",
       features: [
         "Wildcard redirects",
+        "Bulk redirects",
         "Daily, weekly or monthly email reports",
         "Advanced analytics",
         "Unlimited redirects",

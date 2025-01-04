@@ -8,7 +8,8 @@ import {
   BlockStack,
   Text,
   Box,
-  InlineStack
+  InlineStack,
+  Button
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
@@ -41,12 +42,19 @@ ChartJS.register(
 type TimeRange = "day" | "week" | "month";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
   const url = new URL(request.url);
   const range = (url.searchParams.get("range") as TimeRange) || "week";
 
   const now = new Date();
   let startDate = new Date();
+
+  const billingCheck = await billing.check({
+    plans: ["Premium"],
+    isTest: process.env.NODE_ENV !== 'production',
+  });
+
+  const isPremium = billingCheck.hasActivePayment;
 
   switch (range) {
     case "day":
@@ -59,7 +67,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       startDate.setDate(now.getDate() - 7);
   }
 
-  const [dailyErrors, topPaths, totalRedirects, unfixedErrors, topReferrers] = await Promise.all([
+  const [dailyErrors, topPaths, totalRedirects, unfixedErrors, topReferrers] = isPremium 
+  ? await Promise.all([
     // 404 Errors over time
     prisma.$queryRaw`
       SELECT DATE_TRUNC('day', "timestamp") AS day, COUNT(*)::integer AS count
@@ -126,7 +135,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       ],
       take: 3
     })
-  ]);
+  ]):[
+    [],
+    [],
+    0,
+    [],
+    []
+  ];
 
   const totalErrors = dailyErrors.reduce((sum, error) => sum + error.count, 0);
   const avgDaily = Math.round(totalErrors / (range === 'day' ? 1 : range === 'week' ? 7 : 30));
@@ -135,6 +150,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     dailyErrors,
     topPaths,
     range,
+    isPremium,
     additionalMetrics: {
       totalRedirects,
       totalErrors,
@@ -146,7 +162,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function Analytics() {
-  const { dailyErrors, topPaths, range, additionalMetrics } = useLoaderData<typeof loader>();
+  const { dailyErrors, topPaths, range, isPremium, additionalMetrics } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [selectedRange, setSelectedRange] = useState(range);
 
@@ -155,7 +171,7 @@ export default function Analytics() {
     navigate(`/app/analytics?range=${value}`);
   }, [navigate]);
 
-  const lineChartData = {
+  const lineChartData = isPremium ? {
     labels: dailyErrors.map(error => 
       new Date(error.day).toLocaleDateString()
     ),
@@ -167,9 +183,9 @@ export default function Analytics() {
         tension: 0.1,
       },
     ],
-  };
+  }: {};
 
-  const barChartData = {
+  const barChartData = isPremium ? {
     labels: topPaths.map(path => path.path),
     datasets: [
       {
@@ -178,7 +194,112 @@ export default function Analytics() {
         backgroundColor: 'rgba(75, 192, 192, 0.5)',
       },
     ],
-  };
+  }: {};
+
+  if (!isPremium) {
+    return (
+      <Page title="Analytics Dashboard" subtitle="Track and analyze your store's 404 errors and redirects">
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <Box padding="600">
+                <BlockStack gap="600">
+                  {/* Hero Section */}
+                  <Box
+                    background="bg-surface-success-subdued"
+                    borderRadius="300"
+                    padding="600"
+                    borderWidth="025"
+                    borderColor="border-success"
+                  >
+                    <BlockStack gap="400" align="center">
+                      <div style={{ 
+                        backgroundColor: 'var(--p-color-bg-success)',
+                        padding: '20px',
+                        borderRadius: '50%',
+                        display: 'inline-flex',
+                        boxShadow: 'var(--p-shadow-200)'
+                      }}>
+                        {/* <Icon source={NotificationIcon} tone="success" size="large" /> */}
+                      </div>
+                      <BlockStack gap="200" align="center">
+                        <Text variant="headingLg" as="h2">Advanced Analytics</Text>
+                        <Text variant="bodyMd" as="p" alignment="center">
+                          Get detailed insights into your store's broken links and redirects
+                        </Text>
+                      </BlockStack>
+                    </BlockStack>
+                  </Box>
+
+                  {/* Analytics Preview */}
+                  <BlockStack gap="400">
+                    <Text variant="headingMd" as="h3" alignment="center">Premium Analytics Features</Text>
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                      gap: '16px' 
+                    }}>
+                      {[
+                        {
+                          icon: "✨",
+                          title: "Wildcard Patterns",
+                          description: "Create flexible redirect rules using * wildcards"
+                        },
+                        {
+                          icon: "📊",
+                          title: "Advanced Analytics",
+                          description: "Track and analyze redirect performance"
+                        },
+                        {
+                          icon: "🚀",
+                          title: "Priority Support",
+                          description: "Get help when you need it"
+                        }
+                      ].map(feature => (
+                        <Box
+                          key={feature.title}
+                          background="bg-surface-secondary"
+                          padding="400"
+                          borderRadius="200"
+                          shadow="100"
+                        >
+                          <BlockStack gap="300">
+                            <Text variant="headingMd" as="h4">
+                              {feature.icon} {feature.title}
+                            </Text>
+                            <Text variant="bodyMd" tone="subdued">
+                              {feature.description}
+                            </Text>
+                          </BlockStack>
+                        </Box>
+                      ))}
+                    </div>
+                  </BlockStack>
+
+                  {/* CTA */}
+                  <Box padding="500" alignment="center">
+                    <BlockStack gap="300" align="center">
+                      <Button
+                        variant="primary"
+                        tone="success"
+                        url="/app/billing"
+                        size="large"
+                      >
+                        Upgrade to Premium - $2.99/month
+                      </Button>
+                      <Text variant="bodySm" tone="subdued">
+                        Includes 3-day free trial. Cancel anytime.
+                      </Text>
+                    </BlockStack>
+                  </Box>
+                </BlockStack>
+              </Box>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
 
   return (
     <Page 
@@ -400,7 +521,7 @@ export default function Analytics() {
                       data={{
                         ...barChartData,
                         datasets: [{
-                          ...barChartData.datasets[0],
+                          ...barChartData?.datasets[0] ?? [],
                           backgroundColor: 'var(--p-color-bg-info)',
                           borderRadius: 6,
                         }]
