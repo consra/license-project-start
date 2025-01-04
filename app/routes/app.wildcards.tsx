@@ -8,22 +8,30 @@ import React from "react";
 import { CircleUpIcon, LinkIcon, ArrowRightIcon } from "@shopify/polaris-icons";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
+  
+  // Check if user has premium plan
+  const billingCheck = await billing.check({
+    plans: ["Premium"],
+    isTest: process.env.NODE_ENV !== 'production',
+  });
 
-  const wildcards = await prisma.redirect.findMany({
+  const isPremium = billingCheck.hasActivePayment;
+
+  const wildcards = isPremium ? await prisma.redirect.findMany({
     where: {
       shopDomain: session.shop,
       isWildcard: true,
     },
     orderBy: { createdAt: 'desc' },
     take: 5
-  });
+  }) : [];
 
-  return json({ wildcards, shop: session.shop });
+  return json({ wildcards, isPremium, shop: session.shop });
 };
 
 export default function Wildcards() {
-  const { wildcards } = useLoaderData<typeof loader>();
+  const { wildcards, isPremium } = useLoaderData<typeof loader>();
   const [pattern, setPattern] = useState("");
   const [toPath, setToPath] = useState("");
   const [currentWildcards, setCurrentWildcards] = useState(wildcards);
@@ -61,6 +69,104 @@ export default function Wildcards() {
       navigate(`/app/wildcards`);
     }
   }, []);
+
+  if (!isPremium) {
+    return (
+      <Page title="Wildcard Redirects" subtitle="Create flexible redirect rules using wildcards (*)">
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <Box padding="500">
+                <BlockStack gap="500">
+                  {/* Feature Preview */}
+                  <Box
+                    background="bg-surface-secondary"
+                    borderRadius="300"
+                    padding="500"
+                    borderWidth="025"
+                    borderColor="border-subdued"
+                  >
+                    <BlockStack gap="400">
+                      <InlineStack gap="400" blockAlign="center">
+                        <div style={{ 
+                          backgroundColor: 'var(--p-color-bg-info-subdued)',
+                          padding: '16px',
+                          borderRadius: '12px',
+                          boxShadow: 'var(--p-shadow-100)'
+                        }}>
+                          <Icon source={LinkIcon} tone="info" />
+                        </div>
+                        <BlockStack gap="100">
+                          <Text variant="headingMd" as="h2">Wildcard Redirects</Text>
+                          <Text variant="bodySm" tone="subdued">Create powerful redirect rules with wildcards</Text>
+                        </BlockStack>
+                      </InlineStack>
+
+                      <Box
+                        background="bg-surface"
+                        padding="400"
+                        borderRadius="200"
+                        shadow="100"
+                      >
+                        <BlockStack gap="400">
+                          <Text variant="headingSm" as="h3">Premium Features:</Text>
+                          <InlineStack wrap={false} gap="500">
+                            {[
+                              "Wildcard pattern matching",
+                              "Dynamic path redirects",
+                              "Bulk URL handling",
+                              "Advanced analytics",
+                              "Priority support"
+                            ].map(feature => (
+                              <Box
+                                key={feature}
+                                background="bg-surface-active"
+                                padding="300"
+                                borderRadius="200"
+                              >
+                                <InlineStack gap="200" align="center">
+                                  <div style={{ color: 'var(--p-color-text-info)' }}>✓</div>
+                                  <Text variant="bodyMd" as="span">{feature}</Text>
+                                </InlineStack>
+                              </Box>
+                            ))}
+                          </InlineStack>
+                        </BlockStack>
+                      </Box>
+                    </BlockStack>
+                  </Box>
+
+                  {/* Upgrade CTA */}
+                  <Box
+                    background="bg-surface-info-subdued"
+                    borderRadius="300"
+                    padding="500"
+                    borderWidth="025"
+                    borderColor="border-info"
+                  >
+                    <BlockStack gap="400" align="center">
+                      <Text variant="headingMd" as="h2">Upgrade to Premium</Text>
+                      <Text as="p" alignment="center">
+                        Get access to wildcard redirects and more premium features for just $2.99/month
+                      </Text>
+                      <Button
+                        variant="primary"
+                        tone="success"
+                        url="/app/billing"
+                        size="large"
+                      >
+                        Upgrade Now
+                      </Button>
+                    </BlockStack>
+                  </Box>
+                </BlockStack>
+              </Box>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
 
   return (
     <Page 
