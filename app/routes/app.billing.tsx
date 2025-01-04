@@ -15,16 +15,16 @@ import { authenticate } from "../shopify.server";
 import { useState } from "react";
 import { Check, X, Zap } from "lucide-react";
 
+const isTest = process.env.NODE_ENV !== 'production';
+
 const FREE_PLAN = "Free";
 const PREMIUM_PLAN = {
   name: "Premium",
-  amount: 3.99,
+  amount: 2.99,
   currencyCode: "USD",
   interval: "EVERY_30_DAYS" as const,
   trialDays: 7
 };
-
-const isTest = process.env.NODE_ENV !== 'production';
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { billing } = await authenticate.admin(request);
@@ -115,32 +115,28 @@ export default function Billing() {
       name: "Free",
       price: "0",
       features: [
-        "Basic 404 error tracking",
+        "404 error tracking",
         "Simple redirects",
-        "Weekly email reports",
-        "Basic analytics",
-        "Up to 100 redirects"
+        "Weekly or monthly email reports",
+        "Up to 100 redirects",
+        "Bulk operations"
       ],
       limitations: [
         "No wildcard redirects",
-        "Limited analytics",
+        "No analytics",
         "Basic support only",
-        "No bulk operations"
       ]
     },
     {
       name: "Premium",
-      price: "3.99",
+      price: "2.99",
       features: [
-        "Advanced 404 tracking",
         "Wildcard redirects",
-        "Daily email reports",
+        "Daily, weekly or monthly email reports",
         "Advanced analytics",
         "Unlimited redirects",
-        "Bulk operations",
         "Priority support",
-        "Custom rules",
-        "API access"
+        "Feature requests"
       ]
     }
   ];

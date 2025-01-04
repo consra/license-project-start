@@ -18,7 +18,7 @@ import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
 import { useState, useCallback } from "react";
 import React from "react";
-import { sendNotificationEmail } from "../services/email.server";
+import { sendHelpEmail, sendNotificationEmail } from "../services/email.server";
 import { 
   Mail, 
   HelpCircle 
@@ -49,17 +49,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     });
 
     // Send notification email to support team
-    await sendNotificationEmail({
-      email: "seowizzard.storesense@gmail.com",
-      shopDomain: session.shop,
-      subject: "New Support Ticket",
-      htmlContent: `
-        <h2>New Support Ticket</h2>
-        <p><strong>From:</strong> ${name} (${email})</p>
-        <p><strong>Shop:</strong> ${session.shop}</p>
-        <p><strong>Question:</strong></p>
-        <p>${question}</p>
-      `
+    await sendHelpEmail({
+      email: email,
+      name: name,
+      question: question
     });
 
     return json({ success: true, ticket });
