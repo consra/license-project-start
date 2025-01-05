@@ -1,27 +1,40 @@
-FROM node:18-alpine
-RUN apk add --no-cache openssl
+ARG NODE_VERSION=20.11.0
+FROM node:${NODE_VERSION}-alpine AS build
 
-EXPOSE 3000
+WORKDIR /app
+
+# Install dependencies needed for building
+RUN apk add --no-cache python3 make g++
+
+# Copy package files first to leverage cache
+COPY package*.json ./
+RUN npm ci --omit=dev && \
+    npm remove @shopify/app @shopify/cli
+
+# Copy source files
+COPY . .
+
+# Build the application
+RUN npm run build && \
+    # Clean up unnecessary files
+    rm -rf src/ \
+    tests/ \
+    *.ts \
+    tsconfig.json \
+    .npmrc \
+    *.log \
+    *.md
+
+# Final stage
+FROM node:${NODE_VERSION}-alpine
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY package.json package-lock.json* ./
+# Copy only necessary files from build
+COPY --from=build /app /app
 
-# Remove CLI packages since we don't need them in production by default.
-# Remove this line if you want to run CLI commands in your container.
-RUN npm remove @shopify/cli
+EXPOSE 3000
 
-COPY . .
-
-RUN npm run build
-
-# Install dependencies
-RUN npm install
-
-# Run Prisma migrations
-RUN npm run setup
-
-# Start the application
-CMD ["npm", "start"]
+CMD ["npm", "run", "start"]

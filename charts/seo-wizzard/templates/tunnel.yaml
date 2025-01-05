@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cloudflared-frontend
+  name: cloudflared-deployment-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      pod: cloudflared-frontend
+  template:
+    metadata:
+      labels:
+        pod: cloudflared-frontend
+    spec:
+      containers:
+        - command:
+            - cloudflared
+            - tunnel
+            - --no-autoupdate
+            - --metrics
+            - 0.0.0.0:2000
+            - run
+          args:
+            - --token
+            - eyJhIjoiNTMwMzY0YTE2MTNkM2M2YjYwNmExZjAxYzkzM2FjZWEiLCJ0IjoiMWNlZDg4ZDgtOWZhNS00Mjk2LTk5ZDctMTkyNTQ2MjAxZDg1IiwicyI6IlpHVTNOamd6WXpZdE5qUmhZaTAwWmpKakxXRmlObVl0TTJSbVltWTRNalUzT1RRMSJ9
+          image: cloudflare/cloudflared:latest
+          name: cloudflared
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: 2000
+            failureThreshold: 1
+            initialDelaySeconds: 10
+            periodSeconds: 10

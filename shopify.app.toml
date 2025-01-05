@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "8d735ce17d5961291e4e000dd6ad3ff7"
-application_url = "https://noble-control-announcement-predictions.trycloudflare.com"
+application_url = "https://meaningful-fig-chief-arbitrary.trycloudflare.com"
 embedded = true
 name = "seo-wizzard"
 handle = "seo-wizzard-7"
@@ -23,13 +23,13 @@ scopes = "read_themes"
 
 [auth]
 redirect_urls = [
-  "https://noble-control-announcement-predictions.trycloudflare.com/auth/callback",
-  "https://noble-control-announcement-predictions.trycloudflare.com/auth/shopify/callback",
-  "https://noble-control-announcement-predictions.trycloudflare.com/api/auth/callback"
+  "https://meaningful-fig-chief-arbitrary.trycloudflare.com/auth/callback",
+  "https://meaningful-fig-chief-arbitrary.trycloudflare.com/auth/shopify/callback",
+  "https://meaningful-fig-chief-arbitrary.trycloudflare.com/api/auth/callback"
 ]
 
 [app_proxy]
-url = "https://noble-control-announcement-predictions.trycloudflare.com"
+url = "https://meaningful-fig-chief-arbitrary.trycloudflare.com"
 subpath = "404-redirect"
 prefix = "apps"
 

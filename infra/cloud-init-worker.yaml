@@ -1,0 +1,70 @@
+#cloud-config
+packages:
+  - curl
+users:
+  - name: cluster
+    ssh-authorized-keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDPEdXT2Cte2idEeRVWMWCwZ3CIOLAOGWhX3KStPX5TZ+6IJwGBCRmd3d/79ZH6w0x11d7kvtMyHGrSItxgd0RF6vbKm4ZQU7KpAVA5BneOCEghdczhEniThlUd2f0ol3zlGSmpec7KVsM81+w411z2bE7K2+4uvutrLRjEPexLURK5GkBwQiLAS3Mtp0vezeH7YZHzAerY+LOvNyY//bdOyDX/bL2bHB35oTw6GGJHMH3YSqhO/LkkRv8rif7VnL245A7C9ocZxoE9Yd6iqg6NtLzokYf0gyozlThe0wi++R3bRwpCtCyr6aMBoWbt2g8oUPANGU/M8w/GC4PGxu/mZjHBULzJYxa74dHwXt8lBdDQToia/nEALr4ONh5JemL5zB+8I33cHLqdKeh8ZKtQctz79VOtCzvdhPOwOnyaSCn4crd6EFePyMn6kNB9gRKfqrmmckY1hmqysay431xOaCly057NkmAZuouPUfHlDCTlsJO3ePZcLoZYh+yR9u+Lv11QI5HfWS6W2g9gg0Vb/LZl5B+YMq6ZDs0MQuoOa2aYbm1SSiMDmZ0OLokK3ilXsL/DVqS5Ah5bxUOUo9vGZFy3XFFWJKijtrM/Hti7dx7ov9GIvGSKwi9zepL7SpWifPCxbgoE7cQ0C9IKmTY8zD2RqUGvkEi3nc1DkRSiYQ== raducanu.costi@gmail.com
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC9vA2ykfQh1zphnDC9yyqVzEf+KldItWr95sReNLwXN2F59zAaReWQOh8/DyF3ApCAWalkn0Y7Ry3UGH16SZqwssC4ImqeedYVQCKOrLk+n5mlGMneHhXWGIWgvDynyFfIl3hvsZsAaLUUhFxCnM3wN/K7T/erc+4XZldmKXmpNO7a+4VyO6zpkgaUx/MEG0uybO6r5wF9//OO7P222KdTVofms2Rfo2ya+JXKSPkP+ZhHxkerrRDYMnl5kumTatWxdIA5ph8QnrdC+FzjKpDELANlPDDjXJpwqbPRwdPhMQZhyHquA7mmatTsYyQbUlb34hzw3U89IxfPq2+0CXq/ adumitru@tiberius-mbp.corp.adobe.com
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+
+write_files:
+  - path: /root/.ssh/id_rsa
+    content: |
+      -----BEGIN OPENSSH PRIVATE KEY-----
+      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
+      -----END OPENSSH PRIVATE KEY-----
+    permissions: "0600"
+
+runcmd:
+  - apt-get update -y
+  - until curl -k https://10.0.1.1:6443; do sleep 5; done
+  - REMOTE_TOKEN=$(ssh -o StrictHostKeyChecking=accept-new cluster@10.0.1.1 sudo cat /var/lib/rancher/k3s/server/node-token)
+  - curl -sfL https://get.k3s.io | K3S_URL=https://10.0.1.1:6443 K3S_TOKEN=$REMOTE_TOKEN sh -

@@ -1,13 +1,16 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
-import { Page, Layout, Card, DataTable, Text, Button, Banner, Modal, TextField, BlockStack, Box, InlineStack, Badge, Icon } from "@shopify/polaris";
+import { Page, Layout, Card, DataTable, Text, Button, Banner, Modal, TextField, BlockStack, Box, InlineStack, Badge, Icon, Pagination } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { RefreshIcon, ArrowRightIcon, EyeCheckMarkIcon } from "@shopify/polaris-icons";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, billing } = await authenticate.admin(request);
+  const url = new URL(request.url);
+  const page = parseInt(url.searchParams.get("page") || "1");
+  const pageSize = 10;
 
   const billingCheck = await billing.check({
     plans: ["Premium"],
@@ -16,41 +19,60 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const isPremium = billingCheck?.hasActivePayment;
 
-  const brokenLinks = await prisma.notFoundError.groupBy({
-    by: ['path'], // Group by the 'path' field
-    where: {
-      shopDomain: session.shop,
-      redirected: false,
-    },
-    orderBy: {
-      _count: {
-        path: 'desc',
+  const [brokenLinks, total] = await Promise.all([
+    prisma.notFoundError.groupBy({
+      by: ['path'],
+      where: {
+        shopDomain: session.shop,
+        redirected: false,
       },
-    },
-    take: 10,
-    _count: {
-      path: true, 
-    },
-    _min: {
-      timestamp: true,
-    },
-  });
+      orderBy: {
+        _count: {
+          path: 'desc',
+        },
+      },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      _count: {
+        path: true,
+      },
+      _min: {
+        timestamp: true,
+      },
+    }),
+    prisma.notFoundError.groupBy({
+      by: ['path'],
+      where: {
+        shopDomain: session.shop,
+        redirected: false,
+      },
+      _count: true
+    }).then(result => result.length)
+  ]);
 
   return json({
     brokenLinks,
+    total,
+    page,
+    pageSize,
     isPremium,
     shop: session.shop
   });
 };
 
 export default function BrokenLinks() {
-  const { brokenLinks, isPremium, shop } = useLoaderData<typeof loader>();
+  const { brokenLinks, total, page, pageSize, isPremium, shop } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
   const [currentBrokenLinks, setBrokenLinks] = useState(brokenLinks);
   const [modalActive, setModalActive] = useState(false);
   const [selectedPath, setSelectedPath] = useState("");
   const [redirectPath, setRedirectPath] = useState("");
   const [bulkModalActive, setBulkModalActive] = useState(false);
   const [bulkRedirectPath, setBulkRedirectPath] = useState("");
+
+  useEffect(() => {
+    setBrokenLinks(brokenLinks);
+  }, [brokenLinks]);
 
   const handleModalOpen = useCallback((path: string) => {
     setSelectedPath(path);
@@ -103,6 +125,10 @@ export default function BrokenLinks() {
     }
   }, [currentBrokenLinks, bulkRedirectPath]);
 
+  const handlePagination = useCallback((newPage: number) => {
+    navigate(`/app/broken-links?page=${newPage}`);
+  }, [navigate]);
+
   const rows = currentBrokenLinks.map((link) => [
     link.path,
     link._min.timestamp ? new Intl.DateTimeFormat('en-US', {
@@ -137,13 +163,13 @@ export default function BrokenLinks() {
                         Recent 404 Errors
                       </Text>
                       <Text as="p" variant="bodySm" tone="subdued">
-                        Showing the last 10 unhandled broken links
+                        Showing the most common unhandled broken links
                       </Text>
                     </BlockStack>
                     <InlineStack gap="300">
                       <Button 
                         variant="plain" 
-                        onClick={() => window.location.reload()}
+                        onClick={() => navigate("/app/broken-links")}
                         icon={RefreshIcon}
                       >
                         Refresh
@@ -231,6 +257,18 @@ export default function BrokenLinks() {
           </Layout.Section>
         </Layout>
       </BlockStack>
+
+      <Box paddingBlockStart="400">
+        <InlineStack align="center" gap="200">
+          <Pagination
+            hasPrevious={page > 1}
+            onPrevious={() => handlePagination(page - 1)}
+            hasNext={page * pageSize < total}
+            onNext={() => handlePagination(page + 1)}
+            label={`Page ${page} of ${Math.ceil(total / pageSize)}`}
+          />
+        </InlineStack>
+      </Box>
 
       <Modal
         open={modalActive}
