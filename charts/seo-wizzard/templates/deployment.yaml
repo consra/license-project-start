@@ -39,9 +39,7 @@ spec:
             - name: PORT
               value: "{{ .Values.service.targetPort}}"
             - name: SHOPIFY_APP_URL
-              value: https://frontend.billing-service.shop
-            - name: WEBHOOKS_SERVICE_URL
-              value: https://broker.billing-service.shop/webhooks
+              value: https://frontend.seo-wizzard.org
             - name: SHOPIFY_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -52,16 +50,37 @@ spec:
                 secretKeyRef:
                   name: seo-wizzard-secrets
                   key: shopify-api-secret
+            - name: POSTGRES_HOST
+              value: pg-cluster.default.svc.cluster.local
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: shopify
+            - name: POSTGRES_DATABASE
+              value: "shopify_app_db"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: shopify.pg-cluster.credentials.postgresql.acid.zalan.do
+                  key: password
+            - name: CRON_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: seo-wizzard-secrets
+                  key: cron-secret
+            - name: RESEND_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: seo-wizzard-secrets
+                  key: resend-api-key
+            - name: SHOPIFY_SEO_WIZZARD_EXTENSION_FILE_NAME
+              value: 404-redirect
+            - name: SHOPIFY_SEO_WIZZARD_EXTENSION_ID
+              value: "0986e27a-90bf-4af8-8c79-9312c6e46f3a"
             - name: SCOPES
               value: "read_themes"
             - name: ENV
               value: production
-            - name: SCYLLA_HOST
-              value: simple-cluster-client.scylla.svc.cluster.local
-            - name: SCYLLA_DATACENTER
-              value: us-east-1
-            - name: SCYLLA_KEYSPACE
-              value: invoice_buddy
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
