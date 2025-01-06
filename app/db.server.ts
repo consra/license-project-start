@@ -9,10 +9,10 @@ declare global {
 }
 
 // Initialize PostgreSQL session storage
-const dbUrl = process.env.POSTGRES_USER && process.env.POSTGRES_PASSWORD 
-  ? `postgres://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT}/${process.env.POSTGRES_DATABASE}`
+const dbUrl = process.env.DATABASE_URL ? process.env.DATABASE_URL
   :  "postgres://shopify:shopify123@localhost:5432/shopify_app_db";
 
+console.log(dbUrl);
 sessionStorage = new PostgreSQLSessionStorage(dbUrl);
 
 // Initialize Prisma client
