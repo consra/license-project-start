@@ -28,6 +28,12 @@ redirect_urls = [
   "https://frontend.seo-wizzard.org/api/auth/callback"
 ]
 
+[webhooks]
+api_version = "2024-10"
+  [[webhooks.subscriptions]]  
+    uri = "https://frontend.seo-wizzard.org/webhooks/gdpr"
+    compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+
 [app_proxy]
 url = "https://frontend.seo-wizzard.org"
 subpath = "404-redirect"
