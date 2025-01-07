@@ -80,7 +80,7 @@ export default function Settings() {
   
   const [email, setEmail] = useState(settings?.email || "");
   const [frequency, setFrequency] = useState(settings?.frequency || "weekly");
-  const [enabled, setEnabled] = useState(settings?.enabled ?? true);
+  const [enabled, setEnabled] = useState(settings?.enabled ?? false);
 
   const handleSubmit = useCallback(() => {
     const formData = new FormData();
@@ -186,10 +186,9 @@ export default function Settings() {
                           submit(formData, { method: "post" });
                           setEnabled(!enabled);
                         }}
-                        tone={enabled ? "critical" : "success"}
                         fullWidth
                       >
-                        {enabled ? "Disable" : "Enable"} Notifications
+                        Save Settings
                       </Button>
                     </BlockStack>
                   </Box>
