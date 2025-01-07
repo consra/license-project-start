@@ -176,20 +176,25 @@ export default function Settings() {
                           {enabled ? "Active" : "Inactive"}
                         </Badge>
                       </InlineStack>
-                      <Button 
-                        disabled={!email}
-                        onClick={() => {
-                          const formData = new FormData();
-                          formData.append("email", email);
-                          formData.append("frequency", frequency);
-                          formData.append("enabled", (!enabled).toString());
-                          submit(formData, { method: "post" });
-                          setEnabled(!enabled);
-                        }}
-                        fullWidth
-                      >
-                        Save Settings
-                      </Button>
+
+                      <InlineStack gap="300">
+                        <Button 
+                          onClick={() => {
+                            const formData = new FormData();
+                            formData.append("email", email);
+                            formData.append("frequency", frequency);
+                            formData.append("enabled", (!enabled).toString());
+                            submit(formData, { method: "post" });
+                            setEnabled(!enabled);
+                          }}
+                          disabled={!email}
+                          tone={enabled ? "critical" : "success"}
+                          variant="secondary"
+                          fullWidth
+                        >
+                          {enabled ? "Disable" : "Enable"} Notifications
+                        </Button>
+                      </InlineStack>
                     </BlockStack>
                   </Box>
                 </BlockStack>
