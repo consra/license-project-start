@@ -1,12 +1,13 @@
 import React, { useEffect } from "react";
-import { Card, Page, Layout, TextField, Button, DataTable, Text, BlockStack, Box, InlineStack, Badge, Icon, Pagination, TextField as SearchField } from "@shopify/polaris";
+import { Card, Page, Layout, TextField, Button, DataTable, Text, BlockStack, Box, InlineStack, Badge, Icon, Pagination, TextField as SearchField, Modal } from "@shopify/polaris";
 import { useState, useCallback } from "react";
-import { json, useLoaderData, useNavigate } from "@remix-run/react";
+import { json, useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
 import { 
   CircleUpIcon,
   LinkIcon,
   DeleteIcon,
-  SearchIcon
+  SearchIcon,
+  RefreshIcon
 } from "@shopify/polaris-icons";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "app/shopify.server";
@@ -66,10 +67,11 @@ export default function Redirects() {
   const [fromPath, setFromPath] = useState("");
   const [toPath, setToPath] = useState("");
   const { redirects, isPremium, total, page, pageSize } = useLoaderData<typeof loader>();
-  console.log("redirects", JSON.stringify(redirects));
   const [searchValue, setSearchValue] = useState("");
   const navigate = useNavigate();
   const [currentRedirects, setRedirects] = useState(redirects);
+  const submit = useSubmit();
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     setRedirects(redirects);
@@ -102,11 +104,11 @@ export default function Redirects() {
     }
   }, [fromPath, toPath]);
 
-  const handleDelete = useCallback(async (fromPath: string) => {
+  const handleDelete = useCallback(async (shopifyId: string, fromPath: string) => {
     const response = await fetch("/api/redirects/delete", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fromPath }),
+      body: JSON.stringify({ shopifyId , fromPath }),
     });
     
     if (response.ok) {
@@ -115,12 +117,82 @@ export default function Redirects() {
     }
   }, [currentRedirects]);
 
+  const handleImport = useCallback(() => {
+    setShowImportModal(true);
+  }, []);
+
+  const handleImportConfirm = useCallback(() => {
+    submit(null, { method: "post", action: "/api/redirects/init" });
+    setShowImportModal(false);
+    navigate(".", { replace: true });
+  }, [submit]);
+
   return (
     <Page 
       title="Redirect Manager"
       subtitle="Create and manage redirects for your store's URLs"
+      primaryAction={{
+        content: "Import Shopify Redirects",
+        onAction: handleImport,
+        icon: RefreshIcon
+      }}
     >
+      <Modal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        title="Import Shopify Redirects"
+        primaryAction={{
+          content: "Import",
+          onAction: handleImportConfirm,
+          destructive: true
+        }}
+        secondaryActions={[
+          {
+            content: "Cancel",
+            onAction: () => setShowImportModal(false),
+          },
+        ]}
+      >
+        <Modal.Section>
+          <BlockStack gap="400">
+            <Text as="p">
+              This will replace all existing redirects with the ones from your Shopify store. This action cannot be undone.
+            </Text>
+            <Text as="p" tone="warning">
+              Note: Custom wildcard redirects will be preserved.
+            </Text>
+          </BlockStack>
+        </Modal.Section>
+      </Modal>
+
       <Layout>
+        <Layout.Section>
+          <Card>
+            <Box padding="400" background="bg-surface-info-subdued" borderRadius="200" borderWidth="025" borderColor="border-info">
+              <BlockStack gap="300">
+                <InlineStack gap="300" align="center" blockAlign="center">
+                  <div style={{ 
+                    backgroundColor: 'var(--p-color-bg-info-subdued)',
+                    padding: '8px',
+                    borderRadius: '6px'
+                  }}>
+                    <Icon source={LinkIcon} tone="info" />
+                  </div>
+                  <BlockStack gap="100">
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                      <Text as="h2" variant="headingMd">
+                        301 Redirects
+                      </Text>
+                    </div>
+                    <Text as="p" variant="bodyMd">
+                      These are 301 redirects that help your customers find the right pages. If you have existing redirects in your Shopify store, use the "Import Shopify Redirects" button to bring them all here.
+                    </Text>
+                  </BlockStack>
+                </InlineStack>
+              </BlockStack>
+            </Box>
+          </Card>
+        </Layout.Section>
         <Layout.Section>
           <Card>
             <Box padding="500">
@@ -246,7 +318,7 @@ export default function Redirects() {
                             icon={DeleteIcon}
                             tone="critical"
                             variant="plain"
-                            onClick={() => handleDelete(r.fromPath)}
+                            onClick={() => handleDelete(r.shopifyId, r.fromPath)}
                           />
                         </InlineStack>
                       ])}

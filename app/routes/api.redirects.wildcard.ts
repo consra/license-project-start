@@ -28,6 +28,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         shopDomain: session.shop,
         fromPath: pattern,
         toPath,
+        shopifyId: "",
         pattern,
         isWildcard: true,
         isActive: true

@@ -3,7 +3,7 @@ import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
   
   if (request.method !== "POST") {
     return json({ error: "Method not allowed" }, { status: 405 });
@@ -11,6 +11,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const { themeId, isActive } = await request.json();
 
+  // Import existing redirects when app is first activated
+  const redirectCount = await prisma.redirect.count({
+    where: { shopDomain: session.shop }
+  });
+
+  // Update theme status
   const status = await prisma.themeStatus.upsert({
     where: {
       shopDomain_themeId: {

@@ -84,7 +84,7 @@ spec:
             - name: SHOPIFY_SEO_WIZZARD_EXTENSION_ID
               value: "0986e27a-90bf-4af8-8c79-9312c6e46f3a"
             - name: SCOPES
-              value: "read_themes"
+              value: "read_themes, write_online_store_navigation"
             - name: ENV
               value: production
           resources:

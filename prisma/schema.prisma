@@ -20,6 +20,7 @@ model Redirect {
   shopDomain  String    @db.VarChar @map("shop_domain")
   fromPath    String    @db.VarChar @map("from_path")
   toPath      String    @db.VarChar @map("to_path")
+  shopifyId   String    @db.VarChar @map("shopify_id")
   isActive    Boolean   @default(true) @map("is_active")
   isWildcard  Boolean   @default(false) @map("is_wildcard")
   pattern     String?   @db.VarChar @map("pattern")

@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "8d735ce17d5961291e4e000dd6ad3ff7"
-application_url = "https://meaningful-fig-chief-arbitrary.trycloudflare.com"
+application_url = "https://dressing-existing-newfoundland-armenia.trycloudflare.com"
 embedded = true
 name = "seo-wizzard"
 handle = "seo-wizzard-7"
@@ -19,17 +19,17 @@ api_version = "2024-10"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_themes"
+scopes = "read_themes, write_online_store_navigation"
 
 [auth]
 redirect_urls = [
-  "https://meaningful-fig-chief-arbitrary.trycloudflare.com/auth/callback",
-  "https://meaningful-fig-chief-arbitrary.trycloudflare.com/auth/shopify/callback",
-  "https://meaningful-fig-chief-arbitrary.trycloudflare.com/api/auth/callback"
+  "https://dressing-existing-newfoundland-armenia.trycloudflare.com/auth/callback",
+  "https://dressing-existing-newfoundland-armenia.trycloudflare.com/auth/shopify/callback",
+  "https://dressing-existing-newfoundland-armenia.trycloudflare.com/api/auth/callback"
 ]
 
 [app_proxy]
-url = "https://meaningful-fig-chief-arbitrary.trycloudflare.com"
+url = "https://dressing-existing-newfoundland-armenia.trycloudflare.com"
 subpath = "404-redirect"
 prefix = "apps"
 

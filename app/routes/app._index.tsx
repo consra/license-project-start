@@ -58,14 +58,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       return false;
     }
     let isActive = false;
-    console.log("theme id", theme.id);
+
     Object.entries(parsed.current.blocks).forEach(([key, value]) => {
       if (value?.type?.includes("seo-wizzard") && value?.disabled === false) {
         isActive = true;
       }
     });
 
-    console.log("isActive", isActive);
     return isActive;
   };
 
@@ -84,7 +83,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   );
 
   const data = await response.json();
-
+  
 
   const themes = await Promise.all(data.data.themes.nodes.map(async (theme: any) => ({
     ...theme,
