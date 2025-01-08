@@ -11,11 +11,15 @@ api_version = "2024-10"
 
   [[webhooks.subscriptions]]
   topics = [ "app/uninstalled" ]
-  uri = "/webhooks/app/uninstalled"
+  uri = "https://frontend.seo-wizzard.org/webhooks/app/uninstalled"
 
   [[webhooks.subscriptions]]
   topics = [ "app/scopes_update" ]
-  uri = "/webhooks/app/scopes_update"
+  uri = "https://frontend.seo-wizzard.org/webhooks/app/scopes_update"
+
+  [[webhooks.subscriptions]]  
+  uri = "https://frontend.seo-wizzard.org/webhooks/gdpr"
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
@@ -27,12 +31,6 @@ redirect_urls = [
   "https://frontend.seo-wizzard.org/auth/shopify/callback",
   "https://frontend.seo-wizzard.org/api/auth/callback"
 ]
-
-[webhooks]
-api_version = "2024-10"
-  [[webhooks.subscriptions]]  
-    uri = "https://frontend.seo-wizzard.org/webhooks/gdpr"
-    compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 
 [app_proxy]
 url = "https://frontend.seo-wizzard.org"
