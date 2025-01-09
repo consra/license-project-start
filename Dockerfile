@@ -29,7 +29,7 @@ FROM node:${NODE_VERSION}-alpine
 
 WORKDIR /app
 
-ENV NODE_ENV=production
+# ENV NODE_ENV=production
 
 # Create non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

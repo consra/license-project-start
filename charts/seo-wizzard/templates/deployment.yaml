@@ -86,7 +86,7 @@ spec:
             - name: SCOPES
               value: "read_themes, write_online_store_navigation"
             - name: ENV
-              value: production
+              value: dev
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

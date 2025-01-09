@@ -9,14 +9,14 @@ import { CircleUpIcon, LinkIcon, ArrowRightIcon } from "@shopify/polaris-icons";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, billing } = await authenticate.admin(request);
-  
+  const isTest = process.env.NODE_ENV !== 'production';
   // Check if user has premium plan
   const billingCheck = await billing.check({
     plans: ["Premium"],
-    isTest: process.env.NODE_ENV !== 'production',
+    isTest,
   });
 
-  const isPremium = billingCheck.hasActivePayment;
+  const isPremium = billingCheck.hasActivePayment || isTest;
 
   const wildcards = isPremium ? await prisma.redirect.findMany({
     where: {

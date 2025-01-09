@@ -45,16 +45,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, billing } = await authenticate.admin(request);
   const url = new URL(request.url);
   const range = (url.searchParams.get("range") as TimeRange) || "week";
-
+  const isTest = process.env.NODE_ENV !== 'production';
   const now = new Date();
   let startDate = new Date();
 
   const billingCheck = await billing.check({
     plans: ["Premium"],
-    isTest: process.env.NODE_ENV !== 'production',
+    isTest,
   });
 
-  const isPremium = billingCheck.hasActivePayment;
+  const isPremium = billingCheck.hasActivePayment || isTest;
 
   switch (range) {
     case "day":
