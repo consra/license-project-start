@@ -14,7 +14,7 @@ database.sqlite
 .env
 .env.*
 
-
+/infra/*
 
 seo-wizzard-secrets.yaml
 
