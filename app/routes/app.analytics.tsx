@@ -49,12 +49,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const now = new Date();
   let startDate = new Date();
 
-  const billingCheck = await billing.check({
-    plans: ["Premium"],
-    isTest,
-  });
+  // const billingCheck = await billing.check({
+  //   plans: ["Premium"],
+  //   isTest,
+  // });
 
-  const isPremium = billingCheck.hasActivePayment || isTest;
+  const isPremium = true; //billingCheck.hasActivePayment || isTest;
 
   switch (range) {
     case "day":

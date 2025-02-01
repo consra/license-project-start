@@ -18,15 +18,15 @@ const shopify = shopifyApp({
   future: {
     unstable_newEmbeddedAuthStrategy: true,
   },
-  billing: {
-    ["Premium"]: {
-      lineItems: [{
-        amount: 2.99,
-        currencyCode: 'USD',
-        interval: BillingInterval.Every30Days,
-      }],
-    },
-  },
+  // billing: {
+  //   ["Premium"]: {
+  //     lineItems: [{
+  //       amount: 2.99,
+  //       currencyCode: 'USD',
+  //       interval: BillingInterval.Every30Days,
+  //     }],
+  //   },
+  // },
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
     : {}),

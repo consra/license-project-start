@@ -20,12 +20,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const search = url.searchParams.get("search") || "";
   const pageSize = 10;
 
-  const billingCheck = await billing.check({
-    plans: ["Premium"],
-    isTest: process.env.NODE_ENV !== 'production',
-  });
+  // const billingCheck = await billing.check({
+  //   plans: ["Premium"],
+  //   isTest: process.env.NODE_ENV !== 'production',
+  // });
 
-  const isPremium = billingCheck?.hasActivePayment;
+  const isPremium = true; //billingCheck?.hasActivePayment;
 
   const [redirects, total] = await Promise.all([
     prisma.redirect.findMany({
