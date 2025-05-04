@@ -4,6 +4,7 @@ metadata:
   name: {{ include "seo-wizzard.fullname" . }}
   labels:
     {{- include "seo-wizzard.labels" . | nindent 4 }}
+    date: "{{ now | unixEpoch }}"
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}

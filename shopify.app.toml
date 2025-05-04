@@ -1,46 +1,28 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "8d735ce17d5961291e4e000dd6ad3ff7"
-application_url = "https://frontend.seo-wizzard.org"
+client_id = "e1c4c694f669f235050aa73c20600f68"
+application_url = "https://tahoe-creative-detector-conducting.trycloudflare.com"
 embedded = true
-name = "seo-wizzard"
-handle = "seo-wizzard-7"
+name = "seo-wizzard-stage "
+handle = "seo-wizzard-stage"
+
+[build]
+automatically_update_urls_on_dev = true
+include_config_on_deploy = true
 
 [webhooks]
-api_version = "2024-10"
-
-  [[webhooks.subscriptions]]
-  topics = [ "app/uninstalled" ]
-  uri = "https://frontend.seo-wizzard.org/webhooks/app/uninstalled"
-
-  [[webhooks.subscriptions]]
-  topics = [ "app/scopes_update" ]
-  uri = "https://frontend.seo-wizzard.org/webhooks/app/scopes_update"
-
-  [[webhooks.subscriptions]]  
-  uri = "https://frontend.seo-wizzard.org/webhooks/gdpr"
-  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+api_version = "2025-04"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_themes, write_online_store_navigation"
+scopes = "read_themes,write_online_store_navigation"
 
 [auth]
 redirect_urls = [
-  "https://frontend.seo-wizzard.org/auth/callback",
-  "https://frontend.seo-wizzard.org/auth/shopify/callback",
-  "https://frontend.seo-wizzard.org/api/auth/callback"
+  "https://tahoe-creative-detector-conducting.trycloudflare.com/auth/callback",
+  "https://tahoe-creative-detector-conducting.trycloudflare.com/auth/shopify/callback",
+  "https://tahoe-creative-detector-conducting.trycloudflare.com/api/auth/callback"
 ]
-
-[app_proxy]
-url = "https://frontend.seo-wizzard.org"
-subpath = "404-redirect"
-prefix = "apps"
 
 [pos]
 embedded = false
-
-[build]
-dev_store_url = "baltisilacuri.myshopify.com"
-automatically_update_urls_on_dev = true
-include_config_on_deploy = true

@@ -1,6 +1,6 @@
 .PHONY: all build
 
-SEO-WIZZARD_VERSION=0.1.0
+SEO-WIZZARD_VERSION=0.1.1
 
 all: build push helm-install
 

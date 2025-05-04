@@ -165,11 +165,37 @@ export default function Analytics() {
   const { dailyErrors, topPaths, range, isPremium, additionalMetrics } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [selectedRange, setSelectedRange] = useState(range);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleRangeChange = useCallback((value: string) => {
     setSelectedRange(value as TimeRange);
     navigate(`/app/analytics?range=${value}`);
   }, [navigate]);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+    
+    const response = await fetch(`/api/analytics/export?range=${selectedRange}`, {
+      method: 'GET',
+    });
+
+    if (!response.ok) {
+      shopify.toast.show('Failed to export 404 routes');
+    }
+
+    const blob = await response.blob();
+
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = '404-routes.xlsx';
+    link.click();
+
+    // Clean up
+    setTimeout(() => {
+      window.URL.revokeObjectURL(link.href);
+      setIsExporting(false);
+    }, 1000);
+  }, [selectedRange]);
 
   const lineChartData = isPremium ? {
     labels: dailyErrors.map(error => 
@@ -307,19 +333,28 @@ export default function Analytics() {
       subtitle="Monitor and analyze your store's broken links and redirects performance"
       divider
       primaryAction={
-        <Box minWidth="200px">
-          <Select
-            label="Time Range"
-            labelInline
-            options={[
-              { label: 'Last 24 Hours', value: 'day' },
-              { label: 'Last 7 Days', value: 'week' },
-              { label: 'Last 30 Days', value: 'month' },
-            ]}
-            onChange={handleRangeChange}
-            value={selectedRange}
-          />
-        </Box>
+        <InlineStack gap="300">
+          <Button
+            variant="primary"
+            onClick={handleExport}
+            loading={isExporting}
+          >
+            📊 Export 404 routes to Excel
+          </Button>
+          <Box minWidth="200px">
+            <Select
+              label="Time Range"
+              labelInline
+              options={[
+                { label: 'Last 24 Hours', value: 'day' },
+                { label: 'Last 7 Days', value: 'week' },
+                { label: 'Last 30 Days', value: 'month' },
+              ]}
+              onChange={handleRangeChange}
+              value={selectedRange}
+            />
+          </Box>
+        </InlineStack>
       }
     >
       <Layout>

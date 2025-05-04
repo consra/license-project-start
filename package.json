@@ -42,7 +42,8 @@
     "react-dom": "^18.2.0",
     "remixicon": "^4.6.0",
     "resend": "^3.5.0",
-    "vite-tsconfig-paths": "^5.0.1"
+    "vite-tsconfig-paths": "^5.0.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@remix-run/eslint-config": "^2.7.1",
