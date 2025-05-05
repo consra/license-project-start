@@ -12,13 +12,14 @@ import {
   ButtonGroup,
   BlockStack,
   InlineStack,
-  Box
+  Box,
+  Icon
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import React, { useState, useCallback } from "react";
-import { RefreshIcon } from "@shopify/polaris-icons";
+import { RefreshIcon, EmailIcon } from "@shopify/polaris-icons";
 
 type Theme = {
   id: string;
@@ -59,7 +60,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }
     let isActive = false;
 
-    Object.entries(parsed.current.blocks).forEach(([key, value]) => {
+    Object.entries(parsed.current.blocks).forEach(([key, value]: [string, any]) => {
       if (value?.type?.includes("seo-wizzard") && value?.disabled === false) {
         isActive = true;
       }
@@ -85,10 +86,22 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const data = await response.json();
   
 
-  const themes = await Promise.all(data.data.themes.nodes.map(async (theme: any) => ({
+
+  const themes = await Promise.all(data.data.themes.nodes.map(async (theme: any) =>  {
+
+    let handleIsActiveReponse = undefined;
+
+    try {
+      handleIsActiveReponse = await handleIsActive(theme);
+    } catch (error) {
+      console.error(error);
+    }
+    
+    return ({
     ...theme,
-    isActive: await handleIsActive(theme)
-  })));
+    isActive: handleIsActiveReponse
+  });
+  }));
 
   return json({
     shop: session.shop,
@@ -134,7 +147,7 @@ export default function Index() {
   }, [navigate]);
 
   return (
-    <Page title="Welcome to SEO Wizzard 👋" divider>
+    <Page title="Welcome to SEO Wizzard 👋">
       <Layout>
         <Layout.Section>
           <BlockStack gap="500">
@@ -143,7 +156,6 @@ export default function Index() {
               background="bg-surface-secondary"
               borderRadius="300"
               padding="500"
-              shadow="card"
             >
               <BlockStack gap="400">
                 <InlineStack gap="400" align="center">
@@ -200,7 +212,7 @@ export default function Index() {
                             <div style={{ fontSize: '20px' }}>{icon}</div>
                             <Text variant="headingSm" as="h3">{title}</Text>
                           </InlineStack>
-                          <Text variant="bodyMd" tone="subdued">{description}</Text>
+                          <Text variant="bodyMd" tone="subdued" as="p">{description}</Text>
                         </BlockStack>
                       </Box>
                     ))}
@@ -250,9 +262,15 @@ export default function Index() {
                             position={index}
                           >
                             <IndexTable.Cell>
-                              <Badge tone={theme.isActive ? "success" : "critical"}>
-                                {theme.isActive ? "Active" : "Inactive"}
-                              </Badge>
+                              {theme.isActive === undefined ? (
+                                <Badge tone="info">
+                                  Can't check
+                                </Badge>
+                              ) : (
+                                <Badge tone={theme.isActive ? "success" : "critical"}>
+                                  {theme.isActive ? "Active" : "Inactive"}
+                                </Badge>
+                              )}
                             </IndexTable.Cell>
                             <IndexTable.Cell>
                               <Text variant="bodyMd" fontWeight="bold" as="span">
@@ -264,9 +282,9 @@ export default function Index() {
                                 <ButtonGroup>
                                   <Button 
                                     onClick={() => window.open(getThemeEditorUrl(theme.id), '_blank')}
-                                    tone={theme.isActive ? "critical" : "success"}
+                                    tone={theme.isActive === undefined ? undefined : theme.isActive ? "critical" : "success"}
                                   >
-                                    {theme.isActive ? "Deactivate" : "Configure"}
+                                    {theme.isActive === undefined ? "Check manually" : theme.isActive ? "Deactivate" : "Configure"}
                                   </Button>
                                 </ButtonGroup>
                               </div>
@@ -280,7 +298,6 @@ export default function Index() {
                       background="bg-surface-secondary"
                       padding="500"
                       borderRadius="200"
-                      textAlign="center"
                     >
                       <BlockStack gap="300" align="center">
                         <Text as="p" variant="bodyMd" tone="subdued">
@@ -298,13 +315,27 @@ export default function Index() {
                 </BlockStack>
               </Box>
             </Card>
+
+            {/* Support Card */}
+            <Card roundedAbove="xl">
+              <Box padding="500">
+                <BlockStack gap="400">
+                  <InlineStack gap="400" align="center">
+                    <div style={{ fontSize: '24px' }}>📧</div>
+                    <Text variant="headingMd" as="h2">Need help or have a feature request?</Text>
+                  </InlineStack>
+                  <Text as="p" variant="bodyMd" tone="subdued">
+                    We're here to help! If you encounter any issues with the app or have feature requests, 
+                    please reach out to our support team at <Text as="span" fontWeight="bold">storesense.labs@gmail.com</Text>.
+                  </Text>
+                </BlockStack>
+              </Box>
+            </Card>
           </BlockStack>
         </Layout.Section>
       </Layout>
     </Page>
   );
 }
-function async() {
-  throw new Error("Function not implemented.");
-}
+
 

@@ -99,3 +99,14 @@ model ThemeStatus {
   @@unique([shopDomain, themeId])
   @@map("theme_statuses")
 }
+
+model AutoFixSettings {
+  id          Int       @id @default(autoincrement())
+  shopDomain  String    @unique @db.VarChar @map("shop_domain")
+  enabled     Boolean   @default(false)
+  toPath      String    @db.VarChar @map("to_path")
+  createdAt   DateTime  @default(now()) @db.Timestamp @map("created_at")
+  updatedAt   DateTime  @updatedAt @db.Timestamp @map("updated_at")
+
+  @@map("auto_fix_settings")
+}

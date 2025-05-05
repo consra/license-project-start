@@ -175,26 +175,42 @@ export default function Analytics() {
   const handleExport = useCallback(async () => {
     setIsExporting(true);
     
-    const response = await fetch(`/api/analytics/export?range=${selectedRange}`, {
-      method: 'GET',
-    });
-
-    if (!response.ok) {
-      shopify.toast.show('Failed to export 404 routes');
-    }
-
-    const blob = await response.blob();
-
-    const link = document.createElement('a');
-    link.href = window.URL.createObjectURL(blob);
-    link.download = '404-routes.xlsx';
-    link.click();
-
-    // Clean up
-    setTimeout(() => {
-      window.URL.revokeObjectURL(link.href);
+    try {
+      const response = await fetch(`/api/analytics/export?range=${selectedRange}`, {
+        method: 'GET',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to export 404 routes');
+      }
+      
+      // Get the blob from the response
+      const blob = await response.blob();
+      
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create a link element to trigger the download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `404-errors-${selectedRange}.xlsx`; 
+      
+      // Append to the document and click
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+        setIsExporting(false);
+      }, 1000);
+    } catch (error) {
+      console.error('Error downloading file:', error);
       setIsExporting(false);
-    }, 1000);
+      // Show some error message to the user
+      alert('Failed to download 404 data. Please try again.');
+    }
   }, [selectedRange]);
 
   const lineChartData = isPremium ? {

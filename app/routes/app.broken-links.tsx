@@ -1,10 +1,10 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
-import { Page, Layout, Card, DataTable, Text, Button, Banner, Modal, TextField, BlockStack, Box, InlineStack, Badge, Icon, Pagination } from "@shopify/polaris";
+import { Page, Layout, Card, DataTable, Text, Button, Banner, Modal, TextField, BlockStack, Box, InlineStack, Badge, Icon, Pagination, Checkbox } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
 import React, { useState, useCallback, useEffect } from "react";
-import { RefreshIcon, ArrowRightIcon, EyeCheckMarkIcon } from "@shopify/polaris-icons";
+import { RefreshIcon, ArrowRightIcon, EyeCheckMarkIcon, SettingsIcon, AutomationIcon } from "@shopify/polaris-icons";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, billing } = await authenticate.admin(request);
@@ -19,7 +19,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const isPremium = billingCheck?.hasActivePayment;
 
-  const [brokenLinks, total] = await Promise.all([
+  const [brokenLinks, total, autoFixSettings] = await Promise.all([
     prisma.notFoundError.groupBy({
       by: ['path'],
       where: {
@@ -47,7 +47,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         redirected: false,
       },
       _count: true
-    }).then(result => result.length)
+    }).then(result => result.length),
+    prisma.autoFixSettings.findUnique({
+      where: {
+        shopDomain: session.shop,
+      }
+    })
   ]);
 
   return json({
@@ -56,12 +61,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     page,
     pageSize,
     isPremium,
-    shop: session.shop
+    shop: session.shop,
+    autoFixSettings: autoFixSettings || { enabled: false, toPath: "" }
   });
 };
 
 export default function BrokenLinks() {
-  const { brokenLinks, total, page, pageSize, isPremium, shop } = useLoaderData<typeof loader>();
+  const { brokenLinks, total, page, pageSize, isPremium, shop, autoFixSettings } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [currentBrokenLinks, setBrokenLinks] = useState(brokenLinks);
   const [modalActive, setModalActive] = useState(false);
@@ -69,6 +75,9 @@ export default function BrokenLinks() {
   const [redirectPath, setRedirectPath] = useState("");
   const [bulkModalActive, setBulkModalActive] = useState(false);
   const [bulkRedirectPath, setBulkRedirectPath] = useState("");
+  const [autoFixEnabled, setAutoFixEnabled] = useState(autoFixSettings.enabled);
+  const [autoFixPath, setAutoFixPath] = useState(autoFixSettings.toPath);
+  const [autoFixModalActive, setAutoFixModalActive] = useState(false);
 
   useEffect(() => {
     setBrokenLinks(brokenLinks);
@@ -128,6 +137,24 @@ export default function BrokenLinks() {
   const handlePagination = useCallback((newPage: number) => {
     navigate(`/app/broken-links?page=${newPage}`);
   }, [navigate]);
+
+  const handleSaveAutoFix = useCallback(async () => {
+    const response = await fetch("/api/redirects/auto-fix", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        enabled: autoFixEnabled,
+        toPath: autoFixPath,
+      }),
+    });
+
+    if (response.ok) {
+      setAutoFixModalActive(false);
+      shopify.toast.show("Auto-fix settings saved successfully");
+    }
+  }, [autoFixEnabled, autoFixPath]);
 
   const rows = currentBrokenLinks.map((link) => [
     link.path,
@@ -255,6 +282,54 @@ export default function BrokenLinks() {
               </Box>
             </Card>
           </Layout.Section>
+
+          {true && (
+            <Layout.Section>
+              <Card>
+                <Box padding="500">
+                  <BlockStack gap="400">
+                    <InlineStack align="space-between" blockAlign="center">
+                      <BlockStack gap="100">
+                        <Text as="h2" variant="headingMd">
+                          <InlineStack blockAlign="center" gap="200">
+                            <span>Auto-Fix Broken Links</span>
+                          </InlineStack>
+                        </Text>
+                        <Text as="p" variant="bodySm" tone="subdued">
+                          Automatically redirect new 404 errors to a default destination
+                        </Text>
+                      </BlockStack>
+                    </InlineStack>
+
+                    <Box
+                      background="bg-surface-secondary"
+                      borderRadius="300"
+                      padding="400"
+                      borderWidth="025"
+                      borderColor="border-highlight"
+                    >
+                      <BlockStack gap="400">
+                        <Text variant="bodyMd" as="p">
+                          {autoFixEnabled 
+                            ? `Auto-Fix is enabled. All new 404 errors will be automatically redirected to: ${autoFixPath || "Not configured yet"}`
+                            : "Auto-Fix is disabled. Enable this feature to automatically redirect all new 404 errors to a specific page."}
+                        </Text>
+                        
+                        <InlineStack gap="300">
+                          <Button
+                            onClick={() => setAutoFixModalActive(true)}
+                            tone={autoFixEnabled ? "success" : "critical"}
+                          >
+                            {autoFixEnabled ? "Update Settings" : "Enable Auto-Fix"}
+                          </Button>
+                        </InlineStack>
+                      </BlockStack>
+                    </Box>
+                  </BlockStack>
+                </Box>
+              </Card>
+            </Layout.Section>
+          )}
         </Layout>
       </BlockStack>
 
@@ -341,6 +416,45 @@ export default function BrokenLinks() {
               placeholder="/new-path"
               helpText="Enter the path where all broken URLs should redirect to"
             />
+          </BlockStack>
+        </Modal.Section>
+      </Modal>
+
+      <Modal
+        open={autoFixModalActive}
+        onClose={() => setAutoFixModalActive(false)}
+        title="Configure Auto-Fix Settings"
+        primaryAction={{
+          content: 'Save Settings',
+          onAction: handleSaveAutoFix,
+          disabled: autoFixEnabled && !autoFixPath
+        }}
+        secondaryActions={[
+          {
+            content: 'Cancel',
+            onAction: () => setAutoFixModalActive(false),
+          },
+        ]}
+      >
+        <Modal.Section>
+          <BlockStack gap="400">
+            <Checkbox
+              label="Enable Auto-Fix for 404 errors"
+              checked={autoFixEnabled}
+              onChange={setAutoFixEnabled}
+              helpText="When enabled, all new 404 errors will be automatically redirected to the specified path"
+            />
+
+            {autoFixEnabled && (
+              <TextField
+                label="Default Redirect Path"
+                value={autoFixPath}
+                onChange={setAutoFixPath}
+                autoComplete="off"
+                placeholder="/404"
+                helpText="Enter the default path where all new 404 errors should redirect to"
+              />
+            )}
           </BlockStack>
         </Modal.Section>
       </Modal>

@@ -71,7 +71,48 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       });
     }
 
-        // Log the 404 first
+    // Check for auto-fix settings
+    const autoFixSettings = await prisma.autoFixSettings.findUnique({
+      where: {
+        shopDomain
+      }
+    });
+
+    // If auto-fix is enabled, create a redirect and return it
+    if (autoFixSettings?.enabled && autoFixSettings.toPath) {
+      // Create a new redirect entry
+      await prisma.redirect.create({
+        data: {
+          shopDomain,
+          fromPath: path,
+          toPath: autoFixSettings.toPath,
+          shopifyId: "",
+          isActive: true,
+          isWildcard: false
+        }
+      });
+
+      // Log the 404 as redirected
+      await prisma.notFoundError.create({
+        data: {
+          shopDomain,
+          path,
+          userAgent: userAgent || undefined,
+          referer: referer || undefined,
+          redirected: true,
+          redirectTo: autoFixSettings.toPath
+        }
+      });
+
+      return json({
+        redirect: true,
+        redirectUrl: autoFixSettings.toPath,
+        status: 301,
+        autoFixed: true
+      });
+    }
+
+    // Log the 404 first
     await prisma.notFoundError.create({
         data: {
             shopDomain,

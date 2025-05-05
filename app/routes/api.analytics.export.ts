@@ -2,7 +2,6 @@ import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 import { prisma } from "../db.server";
 import * as XLSX from 'xlsx';
-import fs from 'fs';
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -43,21 +42,30 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
     console.log(`Found ${notFoundErrors.length} errors to export`);
 
-    // Transform data for Excel export
-    const data = notFoundErrors.map(error => ({
-      Path: error.path,
-      Timestamp: error.timestamp.toISOString(),
-      UserAgent: error.userAgent || 'N/A',
-      Referer: error.referer || 'N/A',
-      Redirected: error.redirected ? 'Yes' : 'No',
-      RedirectTo: error.redirectTo || 'N/A',
-    }));
+    // Define headers explicitly
+    const headers = [
+      "Path", 
+      "Timestamp", 
+      "User Agent", 
+      "Referrer", 
+      "Redirected", 
+      "Redirect Destination"
+    ];
 
-    // Create Excel workbook
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    // Format the data for Excel
+    const formattedData = notFoundErrors.map(error => [
+      error.path,
+      error.timestamp.toISOString(),
+      error.userAgent || 'N/A',
+      error.referer || 'N/A',
+      error.redirected ? 'Yes' : 'No',
+      error.redirectTo || 'N/A',
+    ]);
     
-    // Set column widths
+    // Create worksheet with headers and data
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...formattedData]);
+    
+    // Set column widths for better readability
     const columnWidths = [
       { wch: 40 }, // Path
       { wch: 25 }, // Timestamp
@@ -68,27 +76,36 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     ];
     worksheet['!cols'] = columnWidths;
     
+    // Add some styling to make the headers stand out
+    // Note: Cell addresses are 0-indexed internally but A1 notation has 1-indexed rows
+    for (let i = 0; i < headers.length; i++) {
+      const cellRef = XLSX.utils.encode_cell({r: 0, c: i});
+      if (!worksheet[cellRef]) worksheet[cellRef] = {};
+      worksheet[cellRef].s = { 
+        font: { bold: true },
+        fill: { fgColor: { rgb: "EEEEEE" } }
+      };
+    }
+    
+    const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "404 Errors");
     
-    // Generate Excel data as an array buffer instead of buffer
-    const excelData = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+    // Write the workbook to a buffer as an array
+    const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
     
-    // Create a Buffer from the array for proper binary handling
-    const buffer = Buffer.from(excelData);
+    // Create a Buffer instance that Node.js can work with
+    const buffer = Buffer.from(excelBuffer);
     
-    // Set appropriate headers for Excel download
-    const headers = new Headers();
-    headers.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    headers.set('Content-Disposition', `attachment; filename="404-errors-${range}.xlsx"`);
-    headers.set('Content-Length', buffer.length.toString());
-    headers.set('Cache-Control', 'no-cache');
+    // Set response headers for Excel download
+    const responseHeaders = new Headers();
+    responseHeaders.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    responseHeaders.set('Content-Disposition', `attachment; filename="404-errors-${range}.xlsx"`);
+    responseHeaders.set('Content-Length', String(buffer.length));
     
-    // debug write the excel file to the public folder
-    console.log(`Writing Excel file to public/404-errors-${range}.xlsx`);
-    fs.writeFileSync(`public/404-errors-${range}.xlsx`, buffer);
+    // Return the Excel file as a binary response
     return new Response(buffer, {
       status: 200,
-      headers,
+      headers: responseHeaders,
     });
   } catch (error) {
     console.error("Error exporting data:", error);
